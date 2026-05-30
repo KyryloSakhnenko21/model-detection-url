@@ -2,8 +2,8 @@ name: Treino Semanal do Modelo
 
 on:
   schedule:
-    # Corre toda sexta-feira à meia-noite (UTC)
-    - cron: '0 0 * * 5'
+    # Corre todo sábado às 22:00 (UTC)
+    - cron: '30 22 * * 6'
   workflow_dispatch:
     # Permite correr manualmente pelo GitHub
 
@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          lfs: true
 
       - name: Configurar Python 3.11
         uses: actions/setup-python@v5
@@ -24,7 +25,7 @@ jobs:
 
       - name: Instalar dependências
         run: |
-          pip install scikit-learn joblib pandas
+          pip install scikit-learn==1.8.0 joblib pandas numpy
 
       - name: Correr treino semanal
         run: |
