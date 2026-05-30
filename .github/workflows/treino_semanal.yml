@@ -1,0 +1,39 @@
+name: Treino Semanal do Modelo
+
+on:
+  schedule:
+    # Corre toda sexta-feira à meia-noite (UTC)
+    - cron: '0 0 * * 5'
+  workflow_dispatch:
+    # Permite correr manualmente pelo GitHub
+
+jobs:
+  treino:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          pip install scikit-learn joblib pandas
+
+      - name: Correr treino semanal
+        run: |
+          python treino_semanal.py
+
+      - name: Commit e push do modelo atualizado
+        run: |
+          git config user.name  "GitHub Actions — URL Shield"
+          git config user.email "actions@github.com"
+          git add modelo_rf_final.pkl
+          git diff --staged --quiet || git commit -m "modelo: treino semanal automático $(date +'%Y-%m-%d')"
+          git push
