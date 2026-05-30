@@ -1,9 +1,10 @@
 """
 treino_semanal.py
 ─────────────────
-Corre toda sexta-feira via GitHub Actions.
+Corre toda sábado às 22:00 via GitHub Actions.
 Lê os novos links do novos_links.json, extrai features,
-re-treina o modelo Random Forest e guarda o novo modelo.
+re-treina o modelo Random Forest, guarda o novo modelo
+e limpa o ficheiro de feedback para o próximo ciclo.
 """
 
 import json
@@ -25,7 +26,6 @@ FICHEIRO_FEEDBACK  = 'novos_links.json'
 MODELO_ATUAL       = 'modelo_rf_final.pkl'
 MODELO_NOVO        = 'modelo_rf_final.pkl'  # Substitui o atual
 MIN_NOVOS_LINKS    = 5   # Mínimo de links novos para re-treinar
-CONFIANCA_MINIMA   = 0.95
 
 ENCURTADORES = {
     'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly',
@@ -71,6 +71,11 @@ def calcular_entropia(texto):
 
 def extrair_features(url):
     url = str(url).strip()
+    if url.startswith(('http://www.', 'https://www.')):
+        url = url.replace('://www.', '://', 1)
+    elif url.startswith('www.'):
+        url = url[4:]
+
     dominio = ''; path = ''; query = ''; esquema = ''; porto = None
     try:
         if not url.startswith(('http://', 'https://')):
@@ -88,7 +93,7 @@ def extrair_features(url):
     except ValueError:
         pass
 
-    dominio_limpo = dominio.replace('www.', '')
+    dominio_limpo = dominio
     partes_dom    = dominio_limpo.split('.')
     tld           = partes_dom[-1].lower() if len(partes_dom) > 1 else ''
     url_lower     = url.lower()
@@ -168,22 +173,21 @@ def main():
     print(f"   ✓ {len(df_novos)} registos extraídos")
     print(f"   Distribuição: {df_novos['label'].value_counts().to_dict()}")
 
-    # 3. Carregar modelo atual e extrair dados de treino originais
+    # 3. Carregar modelo atual
     print("\n📦 A carregar modelo atual...")
     modelo_atual = joblib.load(MODELO_ATUAL)
 
-    # 4. Preparar dados novos
+    # 4. Preparar dados
     X_novos = df_novos[FEATURE_ORDER]
     y_novos = df_novos['label']
 
-    # 5. Re-treinar o modelo com warm_start
-    # Adicionamos as novas árvores ao modelo existente
+    # 5. Re-treinar com warm_start
     print("\n🌲 A re-treinar o modelo com novos dados...")
     modelo_atual.set_params(warm_start=True, n_estimators=modelo_atual.n_estimators + 50)
     modelo_atual.fit(X_novos, y_novos)
     print(f"   ✓ Modelo re-treinado com {modelo_atual.n_estimators} árvores no total")
 
-    # 6. Avaliar (apenas nos novos dados)
+    # 6. Avaliar (apenas nos novos dados, se suficientes)
     if len(df_novos) >= 10:
         X_tr, X_te, y_tr, y_te = train_test_split(X_novos, y_novos, test_size=0.2, random_state=42)
         modelo_atual.fit(X_tr, y_tr)
@@ -198,6 +202,11 @@ def main():
     joblib.dump(modelo_atual, MODELO_NOVO)
     print(f"\n✅ Novo modelo guardado: {MODELO_NOVO}")
     print(f"   Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # 8. Limpar novos_links.json após treino bem sucedido
+    with open(FICHEIRO_FEEDBACK, 'w', encoding='utf-8') as f:
+        json.dump([], f, indent=2)
+    print(f"\n🧹 {FICHEIRO_FEEDBACK} limpo — pronto para novos dados.")
     print(f"\n{'='*60}\n")
 
 
