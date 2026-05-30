@@ -2,8 +2,8 @@ name: Treino Semanal do Modelo
 
 on:
   schedule:
-    # Corre todo sábado às 22:00 (UTC)
-    - cron: '30 22 * * 6'
+    # Corre todo sábado às 22:50 (UTC)
+    - cron: '50 21 * * 6'
   workflow_dispatch:
     # Permite correr manualmente pelo GitHub
 
