@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detetor de URLs Maliciosos</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+        header { background: linear-gradient(135deg, #0d1b4b 0%, #1565c0 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+        header h1 { font-size: 1.7rem; font-weight: 700; }
+        header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
+
+        main { max-width: 920px; margin: 36px auto; padding: 0 20px; }
+
+        .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+        .input-label { font-size: 0.82rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
+        .input-row { display: flex; gap: 12px; }
+        #url-input { flex: 1; padding: 14px 18px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; font-family: 'Courier New', monospace; }
+        #url-input:focus { border-color: #1565c0; }
+        #url-input.error { border-color: #e53935; }
+
+        #btn { padding: 14px 28px; background: #1565c0; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        #btn:hover { background: #0d47a1; }
+        #btn:disabled { background: #90a4ae; cursor: not-allowed; }
+
+        .exemplos { margin-top: 10px; font-size: 0.82rem; color: #888; }
+        .exemplos span { cursor: pointer; color: #1565c0; text-decoration: underline; margin-right: 10px; }
+
+        #loading { display: none; text-align: center; padding: 18px; color: #888; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #e0e0e0; border-top-color: #1565c0; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #resultado { display: none; }
+
+        .res-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #f0f0f0; }
+        .badge { padding: 10px 26px; border-radius: 30px; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
+        .badge.mal { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+        .badge.ben { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+        .url-disp { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #555; word-break: break-all; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; flex: 1; }
+
+        .prob-title { font-size: 0.82rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .prob-lbl { width: 90px; font-size: 0.88rem; font-weight: 600; text-align: right; }
+        .prob-lbl.m { color: #c62828; } .prob-lbl.b { color: #2e7d32; }
+        .prob-bg { flex: 1; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
+        .prob-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+        .prob-fill.m { background: linear-gradient(90deg, #ef9a9a, #e53935); }
+        .prob-fill.b { background: linear-gradient(90deg, #a5d6a7, #43a047); }
+        .prob-val { width: 55px; font-size: 0.9rem; font-weight: 700; }
+        .prob-val.m { color: #c62828; } .prob-val.b { color: #2e7d32; }
+
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 660px) { .grid2 { grid-template-columns: 1fr; } }
+
+        .sec-title { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #1565c0; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+        th { background: #f5f7fa; color: #555; font-weight: 600; padding: 8px 10px; text-align: left; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; }
+        td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; }
+        tr:last-child td { border-bottom: none; }
+
+        .feat-name { font-size: 0.84rem; color: #333; }
+        .vbadge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
+        .vbadge.sim { background: #ffebee; color: #c62828; }
+        .vbadge.nao { background: #e8f5e9; color: #2e7d32; }
+        .vbadge.num { background: #f5f5f5; color: #333; }
+
+        .imp-wrap { display: flex; align-items: center; gap: 8px; }
+        .imp-bg { width: 80px; height: 8px; background: #e8eaf6; border-radius: 4px; overflow: hidden; }
+        .imp-fill { height: 100%; background: #1565c0; border-radius: 4px; }
+        .imp-val { font-size: 0.82rem; color: #888; }
+
+        #erro { display: none; background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; margin-top: 10px; border: 1px solid #ef9a9a; }
+
+        footer { text-align: center; color: #aaa; font-size: 0.78rem; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🔍 Detetor de URLs Maliciosos</h1>
+    <p>Inteligência Artificial aplicada à Cibersegurança · Projeto II · ESTCB · 2025/2026</p>
+</header>
+
+<main>
+    <div class="card">
+        <label class="input-label" for="url-input">Insira um URL para analisar</label>
+        <div class="input-row">
+            <input type="text" id="url-input" placeholder="ex: google.com  ou  serviciosbys.com/paypal.cgi.bin/verify/login.php" autocomplete="off" spellcheck="false">
+            <button id="btn" onclick="analisar()">Analisar</button>
+        </div>
+        <div class="exemplos">
+            Exemplos:
+            <span onclick="testar('google.com')">google.com</span>
+            <span onclick="testar('github.com/scikit-learn/scikit-learn')">github.com</span>
+            <span onclick="testar('https://www.youtube.com/watch?v=zs68LvURpMc')">YouTube</span>
+            <span onclick="testar('serviciosbys.com/paypal.cgi.bin.get-into.herf.secure/verify/login.php?cmd=login')">Phishing PayPal</span>
+            <span onclick="testar('nobell.it/70ffb52d079109dca5664cce6f317373782/paypal.verify.secure/index.php')">Phishing suspeito</span>
+        </div>
+        <div id="erro"></div>
+    </div>
+
+    <div id="loading"><div class="spinner"></div>A analisar o URL...</div>
+
+    <div id="resultado">
+        <div class="card">
+            <div class="res-header">
+                <div id="badge" class="badge">—</div>
+                <div id="url-disp" class="url-disp">—</div>
+            </div>
+            <div class="prob-title">Probabilidade</div>
+            <div class="prob-row">
+                <span class="prob-lbl m">Malicioso</span>
+                <div class="prob-bg"><div id="bm" class="prob-fill m" style="width:0%"></div></div>
+                <span id="vm" class="prob-val m">0%</span>
+            </div>
+            <div class="prob-row">
+                <span class="prob-lbl b">Benigno</span>
+                <div class="prob-bg"><div id="bb" class="prob-fill b" style="width:0%"></div></div>
+                <span id="vb" class="prob-val b">0%</span>
+            </div>
+        </div>
+
+        <div class="grid2">
+            <div class="card">
+                <div class="sec-title"><div class="dot"></div>Características do URL</div>
+                <table>
+                    <thead><tr><th>Feature</th><th>Valor</th></tr></thead>
+                    <tbody id="tb-features"></tbody>
+                </table>
+            </div>
+            <div class="card">
+                <div class="sec-title"><div class="dot"></div>Features Mais Influentes</div>
+                <table>
+                    <thead><tr><th>Feature</th><th>Importância</th></tr></thead>
+                    <tbody id="tb-imp"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    Kyrylo Sakhnenko &amp; Rodrigo Figueiredo · ESTCB · IPCB · 2025/2026
+</footer>
+
+<script>
+    document.getElementById('url-input').addEventListener('keydown', e => { if (e.key === 'Enter') analisar(); });
+    function testar(url) { document.getElementById('url-input').value = url; analisar(); }
+
+    const LABELS = {
+        lex_comp_url: 'Comprimento do URL', lex_comp_dominio: 'Comprimento do domínio',
+        lex_comp_path: 'Comprimento do path', lex_n_subdominios: 'Nº de subdomínios',
+        lex_n_digitos: 'Nº de dígitos', lex_profundidade: 'Profundidade do path',
+        lex_palavras_suspeitas: 'Palavras suspeitas', lex_entropia_url: 'Entropia do URL',
+        lex_entropia_dominio: 'Entropia do domínio', lex_tem_https: 'Usa HTTPS',
+        lex_tem_ip: 'IP no URL', lex_tem_arroba: 'Contém @',
+        lex_tld_suspeito: 'TLD suspeito', lex_encurtador: 'Encurtador de URL',
+    };
+    const BOOL_FEATS = ['lex_tem_https','lex_tem_ip','lex_tem_arroba','lex_tld_suspeito','lex_encurtador'];
+
+    function analisar() {
+        const input = document.getElementById('url-input');
+        const url = input.value.trim();
+        const erro = document.getElementById('erro');
+        erro.style.display = 'none';
+        input.classList.remove('error');
+
+        if (!url) {
+            erro.textContent = 'Por favor insira um URL antes de analisar.';
+            erro.style.display = 'block';
+            input.classList.add('error');
+            return;
+        }
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('resultado').style.display = 'none';
+        document.getElementById('btn').disabled = true;
+
+        fetch('/classificar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btn').disabled = false;
+            if (data.erro) { erro.textContent = data.erro; erro.style.display = 'block'; return; }
+            mostrar(data);
+        })
+        .catch(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btn').disabled = false;
+            erro.textContent = 'Erro de ligação ao servidor.';
+            erro.style.display = 'block';
+        });
+    }
+
+    function mostrar(d) {
+        const isMal = d.predicao === 1;
+        const badge = document.getElementById('badge');
+        badge.textContent = d.label;
+        badge.className = 'badge ' + (isMal ? 'mal' : 'ben');
+        document.getElementById('url-disp').textContent = d.url;
+
+        document.getElementById('bm').style.width = d.prob_maligno + '%';
+        document.getElementById('bb').style.width = d.prob_benigno + '%';
+        document.getElementById('vm').textContent = d.prob_maligno + '%';
+        document.getElementById('vb').textContent = d.prob_benigno + '%';
+
+        // Features
+        const tf = document.getElementById('tb-features');
+        tf.innerHTML = '';
+        for (const [k, v] of Object.entries(d.features)) {
+            const isBool = BOOL_FEATS.includes(k);
+            let valHtml;
+            if (isBool) {
+                valHtml = v === 1
+                    ? '<span class="vbadge sim">Sim</span>'
+                    : '<span class="vbadge nao">Não</span>';
+            } else if (typeof v === 'number' && v % 1 !== 0) {
+                valHtml = `<span class="vbadge num">${v.toFixed(4)}</span>`;
+            } else {
+                valHtml = `<span class="vbadge num">${v}</span>`;
+            }
+            tf.innerHTML += `<tr><td class="feat-name">${LABELS[k] || k}</td><td>${valHtml}</td></tr>`;
+        }
+
+        // Importância
+        const ti = document.getElementById('tb-imp');
+        ti.innerHTML = '';
+        for (const f of d.top5) {
+            const w = Math.round(f.importancia / 22 * 100);
+            ti.innerHTML += `<tr>
+                <td class="feat-name">${f.descricao}</td>
+                <td><div class="imp-wrap">
+                    <div class="imp-bg"><div class="imp-fill" style="width:${w}%"></div></div>
+                    <span class="imp-val">${f.importancia}%</span>
+                </div></td>
+            </tr>`;
+        }
+
+        document.getElementById('resultado').style.display = 'block';
+        document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>
