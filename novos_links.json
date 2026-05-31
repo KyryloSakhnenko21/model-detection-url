@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "url": "http://test.com",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-05-31T21:05:59.687963"
+  },
+  {
+    "url": "https://about.google/?fg=1&utm_source=google-&utm_medium=referral&utm_campaign=hp-header",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-05-31T21:07:05.965670"
+  },
+  {
+    "url": "https://store.google.com/?utm_source=hp_header&utm_medium=google_ooo&utm_campaign=GS100042&hl=pt-PT-",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-05-31T21:07:06.980213"
+  },
+  {
+    "url": "https://www.facebook.com/SportingCP/?locale=pt_PT",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-05-31T21:07:22.854401"
+  },
+  {
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3Dsporting%2Bclube%2Bde%2Bportugal%26sca_esv%3Db92cebba9fab5203%26sxsrf%3DANbL-n64tAYnwXAWrwRBwadM5BukE4ASLw%253A1780258023532%26source%3Dhp%26ei%3D55Qcau7JHo2ukdUP1LWL-Qc%26iflsig%3DAFdpzrgAAAAAahyi9z1PfVu1w-LmC7wdbs0YgIkqIiRS%26oq%3DSporitn%26gs_lp%3DEgdnd3Mtd2l6IgdTcG9yaXRuKgIIATIHECMYsQIYJzIHECMYsQIYJzIMEC4YgAQYChgLGLEDMg8QLhgKGAsYgwEYsQMYgAQyCRAuGAoYCxiABDIMEAAYgAQYChgLGLEDMgkQABiABBgKGAsyDBAAGIAEGAoYCxixAzIMEC4YgAQYChgLGLEDMgkQLhgKGAsYgARIjhRQkQFYhAZwAXgAkAEAmAFloAHwBKoBAzYuMbgBAcgBAPgBAZgCCKAClQWoAgrCAgcQLhjqAhgnwgIHECMY6gIYJ8ICDBAuGBMYgAQYigUYJ8ICDBAjGIAEGIoFGBMYJ8ICEBAjGPAFGMkCGIAEGIoFGCfCAgQQIxgnwgILEC4YgAQYsQMYgwHCAggQABiABBixA8ICBBAAGAPCAgoQIxiABBiKBRgnwgIFEC4YgATCAg4QLhiABBiKBRixAxiDAcICERAuGIAEGIoFGLEDGMcBGNEDwgIFEAAYgATCAggQLhiABBixA8ICBxAuGIAEGArCAgcQABiABBgKwgIIEAAYgAQYywHCAgwQLhgKGAsYsQMYgASYAwjxBeX5YvFG_IKGkgcDNi4yoAe5Y7IHAzUuMrgHjAXCBwUwLjQuNMgHHIAIAQ%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-05-31T21:07:54.893017"
+  }
+]
