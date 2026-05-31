@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shield</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f1117; --bg2: #1a1d27; --bg3: #22263a; --border: #2d3148;
+      --verde: #22c55e; --verde-dim: rgba(34,197,94,0.12);
+      --vermelho: #ef4444; --vermelho-dim: rgba(239,68,68,0.12);
+      --amarelo: #f59e0b; --texto: #e2e8f0; --texto-dim: #64748b;
+      --accent: #6366f1; --accent-dim: rgba(99,102,241,0.15);
+    }
+    body { width: 380px; min-height: 200px; background: var(--bg); color: var(--texto); font-family: 'Inter', sans-serif; font-size: 13px; }
+
+    header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; }
+    .logo { width: 28px; height: 28px; background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .titulo-grupo { flex: 1; }
+    .titulo { font-weight: 700; font-size: 14px; }
+    .subtitulo { font-size: 10px; color: var(--texto-dim); margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+    #estado-flask { display: flex; align-items: center; gap: 5px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--texto-dim); }
+    .dot.online { background: var(--verde); box-shadow: 0 0 6px var(--verde); }
+    .dot.offline { background: var(--vermelho); }
+    .dot.loading { background: var(--amarelo); animation: pulsar 1s infinite; }
+    @keyframes pulsar { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+    main { padding: 14px 16px; }
+
+    .metricas { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .metrica { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; }
+    .metrica .valor { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .metrica .rotulo { font-size: 9px; color: var(--texto-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+    .metrica.total .valor { color: var(--accent); }
+    .metrica.benigno .valor { color: var(--verde); }
+    .metrica.maligno .valor { color: var(--vermelho); }
+
+    .barra-wrapper { margin-bottom: 14px; }
+    .barra-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--texto-dim); margin-bottom: 5px; font-family: 'JetBrains Mono', monospace; }
+    .barra { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+    .barra-fill { height: 100%; border-radius: 2px; background: var(--verde); transition: width 0.5s ease; width: 0%; }
+    .barra-fill.com-maligno { background: linear-gradient(90deg, var(--verde), var(--vermelho)); }
+
+    #alerta-maligno { display: none; background: var(--vermelho-dim); border: 1px solid var(--vermelho); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; }
+    .alerta-titulo { font-weight: 600; color: var(--vermelho); font-size: 12px; margin-bottom: 6px; }
+    #lista-maligno { list-style: none; max-height: 160px; overflow-y: auto; }
+    #lista-maligno li { font-size: 10px; color: #fca5a5; padding: 5px 0; border-bottom: 1px solid rgba(239,68,68,0.1); }
+    #lista-maligno li:last-child { border-bottom: none; }
+
+    .link-row { display: flex; align-items: center; gap: 6px; }
+    .link-texto { flex: 1; font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+    .prob-badge { flex-shrink: 0; background: rgba(239,68,68,0.2); color: var(--vermelho); font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+
+    .btn-benigno {
+      flex-shrink: 0; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4);
+      border-radius: 4px; color: var(--verde); font-size: 9px; font-family: 'JetBrains Mono', monospace;
+      padding: 3px 7px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-benigno:hover { background: rgba(34,197,94,0.25); }
+    .btn-benigno:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-benigno.confirmado { opacity: 0.6; cursor: default; }
+
+    #tudo-ok { display: none; background: var(--verde-dim); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; color: var(--verde); text-align: center; }
+
+    #estado-inicial, #estado-analisar, #estado-sem-flask { text-align: center; padding: 20px 0; color: var(--texto-dim); font-size: 12px; display: none; }
+    #estado-analisar { color: var(--amarelo); }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--amarelo); border-radius: 50%; animation: girar 0.8s linear infinite; margin-bottom: 8px; }
+    @keyframes girar { to{transform:rotate(360deg)} }
+    #estado-sem-flask a { color: var(--accent); text-decoration: none; }
+
+    .botoes-acao { display: flex; gap: 8px; margin-bottom: 14px; }
+    #btn-reanalisar {
+      flex: 1; background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 8px;
+      color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+      padding: 9px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    #btn-reanalisar:hover { background: rgba(99,102,241,0.25); }
+    #btn-reanalisar:disabled { opacity: 0.4; cursor: not-allowed; }
+    #btn-abrir-app {
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.4); border-radius: 8px;
+      color: var(--verde); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+      padding: 9px 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+    }
+    #btn-abrir-app:hover { background: rgba(34,197,94,0.2); }
+
+    /* ── PAINEL DE ALERTAS DE REDE (SSE) ─────────────────── */
+    #painel-rede {
+      display: none;
+      background: var(--vermelho-dim);
+      border: 1.5px solid var(--vermelho);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+    #painel-rede.novo-alerta {
+      animation: piscar 0.5s ease 2;
+    }
+    @keyframes piscar {
+      0%,100% { border-color: var(--vermelho); }
+      50%      { border-color: var(--amarelo); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+    }
+
+    .painel-rede-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(239,68,68,0.12);
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(239,68,68,0.2);
+    }
+    .painel-rede-titulo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--vermelho);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .contador-badge {
+      background: var(--vermelho);
+      color: #fff;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 9px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-limpar-rede {
+      background: none;
+      border: none;
+      color: var(--texto-dim);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      transition: all 0.15s;
+    }
+    .btn-limpar-rede:hover { background: rgba(239,68,68,0.2); color: var(--vermelho); }
+
+    #lista-rede {
+      list-style: none;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #lista-rede li {
+      font-size: 10px;
+      color: #fca5a5;
+      padding: 5px 10px;
+      border-bottom: 1px solid rgba(239,68,68,0.1);
+    }
+    #lista-rede li:last-child { border-bottom: none; }
+
+    .alerta-rede-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+      gap: 1px;
+    }
+    .alerta-rede-hora {
+      font-size: 9px;
+      color: var(--texto-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #lista-rede::-webkit-scrollbar { width: 4px; }
+    #lista-rede::-webkit-scrollbar-track { background: transparent; }
+    #lista-rede::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    /* ───────────────────────────────────────────────────────── */
+
+    footer { border-top: 1px solid var(--border); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .rodape-texto { font-size: 9px; color: var(--texto-dim); font-family: 'JetBrains Mono', monospace; }
+
+    #lista-maligno::-webkit-scrollbar { width: 4px; }
+    #lista-maligno::-webkit-scrollbar-track { background: transparent; }
+    #lista-maligno::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    #toast {
+      display: none; position: fixed; bottom: 44px; left: 50%; transform: translateX(-50%);
+      background: var(--bg3); border: 1px solid var(--verde); border-radius: 6px;
+      padding: 6px 14px; font-size: 11px; font-family: 'JetBrains Mono', monospace;
+      color: var(--verde); z-index: 999; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">🛡️</div>
+    <div class="titulo-grupo">
+      <div class="titulo">URL Shield</div>
+      <div class="subtitulo">Detetor de Links Maliciosos</div>
+    </div>
+    <div id="estado-flask">
+      <div class="dot loading" id="dot-flask"></div>
+      <span id="texto-flask">a verificar...</span>
+    </div>
+  </header>
+
+  <main>
+    <div id="estado-analisar"><div class="spinner"></div><div>A analisar links da página...</div></div>
+    <div id="estado-sem-flask">
+      ⚠️ Não foi possível ligar ao servidor.<br><br>
+      Certifica-te que o Flask está a correr:<br>
+      <code style="color:#f59e0b;font-size:11px;">python app.py</code><br><br>
+      <a href="#" id="btn-retry">Tentar novamente →</a>
+    </div>
+    <div id="estado-inicial">Nenhum link encontrado nesta página.</div>
+
+    <div id="resultados" style="display:none;">
+      <div class="metricas">
+        <div class="metrica total"><div class="valor" id="val-total">0</div><div class="rotulo">Analisados</div></div>
+        <div class="metrica benigno"><div class="valor" id="val-benigno">0</div><div class="rotulo">Benignos</div></div>
+        <div class="metrica maligno"><div class="valor" id="val-maligno">0</div><div class="rotulo">Maliciosos</div></div>
+      </div>
+      <div class="barra-wrapper">
+        <div class="barra-label"><span>Segurança da página</span><span id="pct-seguranca">–</span></div>
+        <div class="barra"><div class="barra-fill" id="barra-fill"></div></div>
+      </div>
+      <div id="alerta-maligno">
+        <div class="alerta-titulo">⚠️ Links maliciosos detetados</div>
+        <ul id="lista-maligno"></ul>
+      </div>
+      <div id="tudo-ok">✅ Nenhum link malicioso encontrado nesta página.</div>
+    </div>
+
+    <div class="botoes-acao">
+      <button id="btn-reanalisar">↺ Re-analisar página</button>
+      <button id="btn-abrir-app" title="Abrir aplicação web">🌐 App</button>
+    </div>
+
+    <!-- PAINEL DE ALERTAS DE REDE (Monitor em Tempo Real) -->
+    <div id="painel-rede">
+      <div class="painel-rede-header">
+        <span class="painel-rede-titulo">
+          ⚡ Alertas de Rede
+          <span id="contador-rede" class="contador-badge">0</span>
+        </span>
+        <button id="btn-limpar-rede" class="btn-limpar-rede" title="Limpar alertas">✕</button>
+      </div>
+      <ul id="lista-rede"></ul>
+    </div>
+
+  </main>
+
+  <footer>
+    <span class="rodape-texto">ESTCB · IPCB · 2025/2026</span>
+    <span class="rodape-texto" id="timestamp">–</span>
+  </footer>
+
+  <div id="toast"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

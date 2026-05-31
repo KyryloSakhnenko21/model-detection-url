@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, Response, stream_with_context
 import joblib
 import pandas as pd
 import re
 import math
 import json
 import os
+import queue
+import threading
+import time
 import subprocess
 from datetime import datetime
 from urllib.parse import urlparse
@@ -14,9 +17,29 @@ app = Flask(__name__)
 # ─────────────────────────────────────────────
 # CONFIGURAÇÃO GIT
 # ─────────────────────────────────────────────
-GITHUB_USER  = 'KyryloSakhnenko21'
-GITHUB_REPO  = 'modelo-deteção-url'
+GITHUB_USER       = 'KyryloSakhnenko21'
+GITHUB_REPO       = 'modelo-deteção-url'
 FICHEIRO_FEEDBACK = 'novos_links.json'
+
+# ─────────────────────────────────────────────
+# FILA DE ALERTAS (partilhada entre monitor e SSE)
+# ─────────────────────────────────────────────
+# Cada alerta é um dicionário com: url, prob_maligno, timestamp, iface
+fila_alertas = queue.Queue(maxsize=500)
+
+# Lista de subscritores SSE (um por cliente ligado ao /alertas/stream)
+_subscritores_sse = []
+_lock_subscritores = threading.Lock()
+
+def publicar_alerta(alerta):
+    """Coloca um alerta na fila e notifica todos os subscritores SSE."""
+    # Notifica cada subscritor (cada ligação SSE aberta)
+    with _lock_subscritores:
+        for q in _subscritores_sse:
+            try:
+                q.put_nowait(alerta)
+            except queue.Full:
+                pass  # subscritor lento — ignora
 
 # ─────────────────────────────────────────────
 # CORS + PRIVATE NETWORK ACCESS
@@ -24,7 +47,7 @@ FICHEIRO_FEEDBACK = 'novos_links.json'
 @app.after_request
 def adicionar_cabecalhos(response):
     response.headers['Access-Control-Allow-Origin']          = '*'
-    response.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Methods']         = 'POST, GET, OPTIONS'
     response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
     response.headers['Access-Control-Allow-Private-Network'] = 'true'
     return response
@@ -43,6 +66,15 @@ def feedback_preflight():
     response = make_response('', 204)
     response.headers['Access-Control-Allow-Origin']          = '*'
     response.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
+    response.headers['Access-Control-Allow-Private-Network'] = 'true'
+    return response
+
+@app.route('/alertas/stream', methods=['OPTIONS'])
+def alertas_stream_preflight():
+    response = make_response('', 204)
+    response.headers['Access-Control-Allow-Origin']          = '*'
+    response.headers['Access-Control-Allow-Methods']         = 'GET, OPTIONS'
     response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
     response.headers['Access-Control-Allow-Private-Network'] = 'true'
     return response
@@ -239,10 +271,97 @@ def classificar_url(url):
 
 
 # ─────────────────────────────────────────────
+# MONITOR EM TEMPO REAL (scapy — thread background)
+# ─────────────────────────────────────────────
+_urls_vistos_monitor = set()
+_lock_urls_vistos    = threading.Lock()
+
+def _processar_pacote(pacote):
+    """Callback do scapy: chamado para cada pacote capturado."""
+    try:
+        from scapy.layers.http import HTTPRequest
+        if not pacote.haslayer(HTTPRequest): return
+
+        http = pacote[HTTPRequest]
+        host  = http.Host.decode(errors='ignore')  if http.Host  else ''
+        path  = http.Path.decode(errors='ignore')  if http.Path  else '/'
+        metodo = http.Method.decode(errors='ignore') if http.Method else ''
+
+        if metodo not in ('GET', 'POST', 'HEAD'): return
+        if not host: return
+
+        url = f'http://{host}{path}'
+
+        # Evitar duplicados
+        with _lock_urls_vistos:
+            if url in _urls_vistos_monitor: return
+            _urls_vistos_monitor.add(url)
+
+        # Classificar
+        features = extrair_features(url)
+        X = pd.DataFrame([features])[FEATURE_ORDER]
+        probs    = modelo.predict_proba(X)[0]
+        predicao = int(modelo.predict(X)[0])
+
+        prob_mal = round(float(probs[1]) * 100, 2)
+        ts = datetime.now().strftime('%H:%M:%S')
+
+        # Imprimir no terminal sempre
+        cor = '\033[91m' if predicao == 1 else '\033[92m'
+        reset = '\033[0m'
+        label = 'MALICIOSO' if predicao == 1 else 'BENIGNO  '
+        print(f'[{ts}] {cor}{label}{reset}  {prob_mal:5.1f}%  {url}')
+
+        # Só publica alerta SSE se for malicioso
+        if predicao == 1:
+            alerta = {
+                'url'         : url,
+                'prob_maligno': prob_mal,
+                'timestamp'   : ts,
+                'fonte'       : 'monitor_rede',
+            }
+            publicar_alerta(alerta)
+
+    except Exception:
+        pass  # pacotes malformados — ignorar silenciosamente
+
+
+def _iniciar_monitor():
+    """Tenta importar scapy e iniciar o sniff. Corre em thread separada."""
+    try:
+        from scapy.all import sniff
+        print('[Monitor] ✓ Scapy carregado — a monitorizar tráfego HTTP (porta 80)...')
+        print('[Monitor]   (requer Npcap instalado e privilégios de administrador)')
+        sniff(
+            filter='tcp port 80',
+            prn=_processar_pacote,
+            store=False,
+        )
+    except ImportError:
+        print('[Monitor] ✗ Scapy não instalado. Execute: pip install scapy')
+        print('[Monitor]   O Flask continua a funcionar normalmente sem o monitor.')
+    except PermissionError:
+        print('[Monitor] ✗ Sem permissões para capturar tráfego.')
+        print('[Monitor]   Execute o app.py como Administrador (Windows) ou com sudo (Linux).')
+    except OSError as e:
+        if 'Npcap' in str(e) or 'winpcap' in str(e).lower() or 'no suitable' in str(e).lower():
+            print('[Monitor] ✗ Npcap não encontrado. Instale em: https://npcap.com/')
+        else:
+            print(f'[Monitor] ✗ Erro ao iniciar monitor: {e}')
+    except Exception as e:
+        print(f'[Monitor] ✗ Erro inesperado: {e}')
+
+
+def arrancar_monitor():
+    """Arranca o monitor scapy numa thread daemon (termina com o Flask)."""
+    t = threading.Thread(target=_iniciar_monitor, daemon=True, name='MonitorScapy')
+    t.start()
+
+
+# ─────────────────────────────────────────────
 # SISTEMA DE FEEDBACK E GIT
 # ─────────────────────────────────────────────
 def carregar_feedback():
-    """Carrega o ficheiro JSON de feedback existente."""
     if os.path.exists(FICHEIRO_FEEDBACK):
         with open(FICHEIRO_FEEDBACK, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -250,14 +369,10 @@ def carregar_feedback():
 
 
 def guardar_feedback_local(url, label, fonte='utilizador'):
-    """Guarda um novo link no ficheiro JSON de feedback."""
     dados = carregar_feedback()
-
-    # Evitar duplicados
     urls_existentes = {entry['url'] for entry in dados}
     if url in urls_existentes:
         return False
-
     entrada = {
         'url'      : url,
         'label'    : label,
@@ -265,15 +380,12 @@ def guardar_feedback_local(url, label, fonte='utilizador'):
         'timestamp': datetime.now().isoformat()
     }
     dados.append(entrada)
-
     with open(FICHEIRO_FEEDBACK, 'w', encoding='utf-8') as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
-
     return True
 
 
 def fazer_git_push(url, label):
-    """Faz git add, commit e push automático para o GitHub."""
     try:
         subprocess.run(['git', 'add', FICHEIRO_FEEDBACK], check=True, capture_output=True)
         msg_commit = f'feedback: {label} — {url[:60]}'
@@ -315,15 +427,11 @@ def guardar_feedback():
     if label not in ('BENIGNO', 'MALICIOSO'):
         return jsonify({'erro': 'Label inválido. Use BENIGNO ou MALICIOSO.'}), 400
 
-    # Guardar localmente
     novo = guardar_feedback_local(url, label, fonte='utilizador')
-
     if not novo:
         return jsonify({'ok': True, 'mensagem': 'URL já existia no feedback.', 'push': False})
 
-    # Push automático para GitHub
     push_ok = fazer_git_push(url, label)
-
     return jsonify({
         'ok'      : True,
         'mensagem': 'Feedback guardado e enviado para GitHub.' if push_ok else 'Feedback guardado localmente (push falhou).',
@@ -331,5 +439,87 @@ def guardar_feedback():
     })
 
 
+# ─────────────────────────────────────────────
+# SSE — STREAM DE ALERTAS EM TEMPO REAL
+# ─────────────────────────────────────────────
+@app.route('/alertas/stream')
+def alertas_stream():
+    """
+    Endpoint SSE. Cada cliente que se liga recebe a sua fila individual.
+    O monitor publica alertas → publicar_alerta() → cada fila individual é notificada.
+    """
+    # Criar uma fila individual para este cliente
+    q_cliente = queue.Queue(maxsize=100)
+    with _lock_subscritores:
+        _subscritores_sse.append(q_cliente)
+
+    def gerar():
+        # Heartbeat inicial para confirmar ligação
+        yield 'data: {"tipo":"ligado"}\n\n'
+        try:
+            while True:
+                try:
+                    # Bloqueia até 25 segundos; se não houver alerta, envia heartbeat
+                    alerta = q_cliente.get(timeout=25)
+                    payload = json.dumps({
+                        'tipo'        : 'alerta',
+                        'url'         : alerta['url'],
+                        'prob_maligno': alerta['prob_maligno'],
+                        'timestamp'   : alerta['timestamp'],
+                        'fonte'       : alerta.get('fonte', 'monitor_rede'),
+                    }, ensure_ascii=False)
+                    yield f'data: {payload}\n\n'
+                except queue.Empty:
+                    # Heartbeat a cada 25 s para manter a ligação viva
+                    yield 'data: {"tipo":"heartbeat"}\n\n'
+        except GeneratorExit:
+            pass
+        finally:
+            # Remover cliente da lista quando fechar a ligação
+            with _lock_subscritores:
+                try:
+                    _subscritores_sse.remove(q_cliente)
+                except ValueError:
+                    pass
+
+    return Response(
+        stream_with_context(gerar()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control'              : 'no-cache',
+            'X-Accel-Buffering'          : 'no',
+            'Access-Control-Allow-Origin': '*',
+        }
+    )
+
+
+@app.route('/alertas/injetar', methods=['POST'])
+def alertas_injetar():
+    """
+    Endpoint auxiliar: permite injetar um alerta manualmente (útil para testes).
+    Corpo JSON: { "url": "...", "prob_maligno": 87.5 }
+    """
+    data = request.get_json()
+    url  = data.get('url', '').strip()
+    prob = float(data.get('prob_maligno', 0.0))
+    if not url:
+        return jsonify({'erro': 'URL obrigatório'}), 400
+    alerta = {
+        'url'         : url,
+        'prob_maligno': prob,
+        'timestamp'   : datetime.now().strftime('%H:%M:%S'),
+        'fonte'       : 'manual',
+    }
+    publicar_alerta(alerta)
+    return jsonify({'ok': True, 'mensagem': f'Alerta injetado: {url}'})
+
+
+# ─────────────────────────────────────────────
+# ARRANQUE
+# ─────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    print('=' * 60)
+    print('  URL Shield — Flask + Monitor em Tempo Real')
+    print('=' * 60)
+    arrancar_monitor()
+    app.run(debug=False, port=5000, threaded=True)
