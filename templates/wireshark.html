@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shield — Análise Wireshark</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+        nav { background: #0a1535; padding: 0 40px; display: flex; align-items: center; gap: 0; }
+        .nav-brand { color: white; font-weight: 700; font-size: 0.95rem; padding: 14px 20px 14px 0; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 10px; white-space: nowrap; }
+        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; padding: 14px 16px; transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .nav-link:hover { color: white; }
+        .nav-link.ativo { color: white; border-bottom-color: #7b1fa2; }
+        header { background: linear-gradient(135deg, #1a0533 0%, #7b1fa2 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+        header h1 { font-size: 1.7rem; font-weight: 700; }
+        header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
+        main { max-width: 1100px; margin: 36px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-titulo { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; }
+
+        /* Upload */
+        #zona-upload { border: 2px dashed #c0c0c0; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+        #zona-upload:hover, #zona-upload.drag { border-color: #7b1fa2; background: #f3e5f5; }
+        #zona-upload .icone { font-size: 2.5rem; margin-bottom: 10px; }
+        #zona-upload p { color: #888; font-size: 0.9rem; }
+        #zona-upload strong { color: #7b1fa2; }
+        #input-ficheiro { display: none; }
+        #nome-ficheiro { margin-top: 10px; font-size: 0.82rem; color: #7b1fa2; font-weight: 600; display: none; }
+        #btn-analisar { margin-top: 16px; padding: 12px 32px; background: #7b1fa2; color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; display: none; }
+        #btn-analisar:hover { background: #6a1b9a; }
+        #btn-analisar:disabled { background: #90a4ae; cursor: not-allowed; }
+        #erro-upload { display:none; background:#ffebee; color:#c62828; padding:10px 14px; border-radius:7px; font-size:0.88rem; margin-top:10px; border:1px solid #ef9a9a; }
+
+        /* Loading */
+        #loading-pcap { display:none; text-align:center; padding:18px; color:#888; }
+        .spinner { display:inline-block; width:20px; height:20px; border:3px solid #e0e0e0; border-top-color:#7b1fa2; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:8px; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        /* Resultados */
+        #resultados-pcap { display: none; }
+        .metricas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        .metrica { background: #f5f7fa; border-radius: 10px; padding: 16px; text-align: center; }
+        .metrica .val { font-size: 1.9rem; font-weight: 700; font-family: 'Courier New', monospace; line-height: 1; }
+        .metrica .rot { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+        .metrica.m-total  .val { color: #7b1fa2; }
+        .metrica.m-benign .val { color: #2e7d32; }
+        .metrica.m-malic  .val { color: #c62828; }
+        .metrica.m-conf   .val { color: #1565c0; }
+
+        .grid-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 22px; }
+        @media (max-width:700px) { .grid-graficos { grid-template-columns: 1fr; } .metricas { grid-template-columns: 1fr 1fr; } }
+        .grafico-wrap { position: relative; height: 220px; }
+
+        /* Tabela */
+        .filtros { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+        .filtro-btn { padding: 5px 14px; border-radius: 20px; border: 1px solid #e0e0e0; background: white; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+        .filtro-btn:hover { border-color: #7b1fa2; color: #7b1fa2; }
+        .filtro-btn.ativo { background: #7b1fa2; color: white; border-color: #7b1fa2; }
+        #pesquisa-url { flex: 1; min-width: 180px; padding: 6px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.85rem; outline: none; }
+        #pesquisa-url:focus { border-color: #7b1fa2; }
+        #btn-exportar-csv { padding: 5px 14px; border-radius: 20px; border: 1px solid #43a047; background: white; color: #2e7d32; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        #btn-exportar-csv:hover { background: #e8f5e9; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { background: #f5f7fa; color: #555; font-weight: 600; padding: 9px 10px; text-align: left; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; cursor: pointer; user-select: none; }
+        th:hover { background: #ede7f6; color: #7b1fa2; }
+        td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; }
+        tr:hover td { background: #fafafa; }
+        .badge-mal { display:inline-block; background:#ffebee; color:#c62828; padding:2px 9px; border-radius:12px; font-size:0.78rem; font-weight:700; border:1px solid #ef9a9a; }
+        .badge-ben { display:inline-block; background:#e8f5e9; color:#2e7d32; padding:2px 9px; border-radius:12px; font-size:0.78rem; font-weight:700; border:1px solid #a5d6a7; }
+        .url-cell { font-family:'Courier New',monospace; font-size:0.78rem; word-break:break-all; max-width:380px; }
+        .prob-mini { display:flex; align-items:center; gap:6px; }
+        .prob-mini-bg { width:60px; height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; }
+        .prob-mini-fill { height:100%; border-radius:3px; }
+        .prob-mini-fill.mal { background:#e53935; }
+        .prob-mini-fill.ben { background:#43a047; }
+        #sem-resultados { display:none; text-align:center; padding:28px; color:#bbb; font-size:0.9rem; }
+        #paginacao { display:flex; gap:6px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+        .pag-btn { padding:4px 12px; border:1px solid #e0e0e0; border-radius:5px; background:white; font-size:0.82rem; cursor:pointer; }
+        .pag-btn:hover { border-color:#7b1fa2; color:#7b1fa2; }
+        .pag-btn.ativo { background:#7b1fa2; color:white; border-color:#7b1fa2; }
+
+        /* Histórico */
+        .hist-item { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid #f5f5f5; }
+        .hist-item:last-child { border-bottom:none; }
+        .hist-nome { flex:1; font-size:0.88rem; font-family:'Courier New',monospace; color:#555; }
+        .hist-data { font-size:0.78rem; color:#aaa; white-space:nowrap; }
+        .hist-badges { display:flex; gap:6px; }
+        .hist-badge { font-size:0.75rem; font-weight:600; padding:2px 8px; border-radius:10px; }
+        .hist-badge.hb-total { background:#ede7f6; color:#7b1fa2; }
+        .hist-badge.hb-mal   { background:#ffebee; color:#c62828; }
+        .hist-badge.hb-ben   { background:#e8f5e9; color:#2e7d32; }
+        #hist-vazio { text-align:center; padding:20px; color:#bbb; font-size:0.88rem; }
+
+        footer { text-align:center; color:#aaa; font-size:0.78rem; padding:20px; }
+    </style>
+</head>
+<body>
+<nav>
+    <span class="nav-brand">🛡️ URL Shield</span>
+    <a href="/" class="nav-link">🔍 Analisar URL</a>
+    <a href="/monitor" class="nav-link">⚡ Monitor em Tempo Real</a>
+    <a href="/wireshark" class="nav-link ativo">📡 Análise Wireshark</a>
+</nav>
+<header>
+    <h1>📡 Análise de Capturas Wireshark</h1>
+    <p>Carrega um ficheiro .pcap e classifica todos os URLs HTTP capturados · ESTCB · 2025/2026</p>
+</header>
+<main>
+    <!-- Upload -->
+    <div class="card">
+        <div class="card-titulo">Carregar ficheiro .pcap</div>
+        <div id="zona-upload"
+             onclick="document.getElementById('input-ficheiro').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="aoSoltar(event)">
+            <div class="icone">📂</div>
+            <p>Clica aqui ou arrasta um ficheiro <strong>.pcap</strong> para analisar</p>
+            <p style="font-size:0.76rem;margin-top:6px;">Exporta do Wireshark: Ficheiro → Exportar pacotes dissecados → .pcap</p>
+        </div>
+        <input type="file" id="input-ficheiro" accept=".pcap" onchange="aoEscolherFicheiro(this)">
+        <div id="nome-ficheiro"></div>
+        <div style="text-align:center;">
+            <button id="btn-analisar" onclick="analisarPcap()">Analisar captura</button>
+        </div>
+        <div id="erro-upload"></div>
+    </div>
+
+    <div id="loading-pcap"><div class="spinner"></div>A processar o ficheiro .pcap...</div>
+
+    <!-- Resultados -->
+    <div id="resultados-pcap">
+        <div class="card">
+            <div class="card-titulo">Sumário da análise — <span id="nome-ficheiro-res" style="color:#7b1fa2;font-style:italic;"></span></div>
+            <div class="metricas">
+                <div class="metrica m-total" ><div class="val" id="r-total" >0</div><div class="rot">URLs únicos</div></div>
+                <div class="metrica m-benign"><div class="val" id="r-benign">0</div><div class="rot">Benignos</div></div>
+                <div class="metrica m-malic" ><div class="val" id="r-malic" >0</div><div class="rot">Maliciosos</div></div>
+                <div class="metrica m-conf"  ><div class="val" id="r-conf"  >0%</div><div class="rot">Confiança média</div></div>
+            </div>
+            <div class="grid-graficos">
+                <div><canvas id="grafico-donut"></canvas></div>
+                <div><canvas id="grafico-barras"></canvas></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo">URLs classificados</div>
+            <div class="filtros">
+                <button class="filtro-btn ativo" onclick="filtrar('todos',this)">Todos</button>
+                <button class="filtro-btn" onclick="filtrar('MALICIOSO',this)">⚠️ Maliciosos</button>
+                <button class="filtro-btn" onclick="filtrar('BENIGNO',this)">✓ Benignos</button>
+                <input type="text" id="pesquisa-url" placeholder="Pesquisar URL ou domínio..." oninput="pesquisar(this.value)">
+                <button id="btn-exportar-csv" onclick="exportarCSV()">⬇ Exportar CSV</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="ordenar('label')">Resultado ↕</th>
+                            <th onclick="ordenar('prob_maligno')">Prob. Malicioso ↕</th>
+                            <th onclick="ordenar('metodo')">Método ↕</th>
+                            <th onclick="ordenar('dominio')">Domínio ↕</th>
+                            <th>URL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-resultados"></tbody>
+                </table>
+            </div>
+            <div id="sem-resultados">Nenhum resultado para o filtro selecionado.</div>
+            <div id="paginacao"></div>
+        </div>
+    </div>
+
+    <!-- Histórico -->
+    <div class="card">
+        <div class="card-titulo">Histórico de análises</div>
+        <div id="hist-vazio" {% if not historico %}style="display:block"{% else %}style="display:none"{% endif %}>
+            Nenhuma análise realizada ainda.
+        </div>
+        <div id="lista-historico">
+            {% for h in historico %}
+            <div class="hist-item">
+                <span class="hist-nome">📄 {{ h.ficheiro }}</span>
+                <div class="hist-badges">
+                    <span class="hist-badge hb-total">{{ h.total }} URLs</span>
+                    <span class="hist-badge hb-ben">{{ h.benignos }} benignos</span>
+                    <span class="hist-badge hb-mal">{{ h.maliciosos }} maliciosos</span>
+                </div>
+                <span class="hist-data">{{ h.data }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+<footer>Kyrylo Sakhnenko &amp; Rodrigo Figueiredo · ESTCB · IPCB · 2025/2026</footer>
+
+<script>
+    let _ficheiro = null;
+    let _todosResultados = [];
+    let _filtrados = [];
+    let _filtroAtivo = 'todos';
+    let _pesquisa = '';
+    let _ordenacaoCol = 'prob_maligno';
+    let _ordenacaoAsc = false;
+    let _paginaAtual = 1;
+    const POR_PAGINA = 20;
+    let _graficoDonut  = null;
+    let _graficoBarras = null;
+
+    function aoEscolherFicheiro(input) {
+        if (!input.files[0]) return;
+        _ficheiro = input.files[0];
+        document.getElementById('nome-ficheiro').textContent = '📄 ' + _ficheiro.name;
+        document.getElementById('nome-ficheiro').style.display = 'block';
+        document.getElementById('btn-analisar').style.display = 'inline-block';
+        document.getElementById('erro-upload').style.display  = 'none';
+    }
+
+    function aoSoltar(e) {
+        e.preventDefault();
+        document.getElementById('zona-upload').classList.remove('drag');
+        const f = e.dataTransfer.files[0];
+        if (!f || !f.name.endsWith('.pcap')) { mostrarErro('Apenas ficheiros .pcap são aceites.'); return; }
+        _ficheiro = f;
+        document.getElementById('nome-ficheiro').textContent = '📄 ' + _ficheiro.name;
+        document.getElementById('nome-ficheiro').style.display = 'block';
+        document.getElementById('btn-analisar').style.display  = 'inline-block';
+        document.getElementById('erro-upload').style.display   = 'none';
+    }
+
+    function mostrarErro(msg) {
+        const el = document.getElementById('erro-upload');
+        el.textContent = msg; el.style.display = 'block';
+    }
+
+    function analisarPcap() {
+        if (!_ficheiro) { mostrarErro('Nenhum ficheiro selecionado.'); return; }
+        document.getElementById('btn-analisar').disabled = true;
+        document.getElementById('loading-pcap').style.display    = 'block';
+        document.getElementById('resultados-pcap').style.display = 'none';
+        document.getElementById('erro-upload').style.display     = 'none';
+
+        const fd = new FormData();
+        fd.append('ficheiro', _ficheiro);
+
+        fetch('/analisar_pcap', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('loading-pcap').style.display = 'none';
+            document.getElementById('btn-analisar').disabled = false;
+            if (data.erro) { mostrarErro(data.erro); return; }
+            mostrarResultados(data);
+            adicionarHistorico(data);
+        })
+        .catch(() => {
+            document.getElementById('loading-pcap').style.display = 'none';
+            document.getElementById('btn-analisar').disabled = false;
+            mostrarErro('Erro de ligação ao servidor.');
+        });
+    }
+
+    function mostrarResultados(data) {
+        _todosResultados = data.resultados;
+        _filtroAtivo = 'todos'; _pesquisa = ''; _paginaAtual = 1;
+        _ordenacaoCol = 'prob_maligno'; _ordenacaoAsc = false;
+
+        document.getElementById('r-total').textContent  = data.total;
+        document.getElementById('r-benign').textContent = data.benignos;
+        document.getElementById('r-malic').textContent  = data.maliciosos;
+        document.getElementById('nome-ficheiro-res').textContent = _ficheiro.name;
+
+        const confMedia = data.total > 0
+            ? (data.resultados.reduce((s, r) => s + r.prob_maligno, 0) / data.total).toFixed(1) + '%'
+            : '—';
+        document.getElementById('r-conf').textContent = confMedia;
+
+        desenharGraficos(data.benignos, data.maliciosos, data.resultados);
+        aplicarFiltros();
+        document.getElementById('resultados-pcap').style.display = 'block';
+        document.getElementById('resultados-pcap').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function desenharGraficos(benignos, maliciosos, resultados) {
+        if (_graficoDonut)  _graficoDonut.destroy();
+        if (_graficoBarras) _graficoBarras.destroy();
+
+        const ctxD = document.getElementById('grafico-donut').getContext('2d');
+        _graficoDonut = new Chart(ctxD, {
+            type: 'doughnut',
+            data: {
+                labels: ['Benignos', 'Maliciosos'],
+                datasets: [{ data: [benignos, maliciosos],
+                    backgroundColor: ['#43a047', '#e53935'],
+                    borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: { responsive: true, maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom' },
+                           title: { display: true, text: 'Distribuição de resultados' } } }
+        });
+
+        const contDom = {};
+        resultados.filter(r => r.label === 'MALICIOSO').forEach(r => {
+            contDom[r.dominio] = (contDom[r.dominio] || 0) + 1;
+        });
+        const top10 = Object.entries(contDom).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+        const ctxB = document.getElementById('grafico-barras').getContext('2d');
+        _graficoBarras = new Chart(ctxB, {
+            type: 'bar',
+            data: {
+                labels: top10.map(([d]) => d.length > 22 ? d.slice(0, 20) + '…' : d),
+                datasets: [{ label: 'URLs maliciosos', data: top10.map(([, n]) => n),
+                    backgroundColor: 'rgba(229,57,53,0.7)', borderColor: '#e53935', borderWidth: 1 }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, indexAxis: 'y',
+                plugins: { legend: { display: false },
+                           title: { display: true, text: 'Top domínios maliciosos' } },
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    function aplicarFiltros() {
+        let lista = [..._todosResultados];
+        if (_filtroAtivo !== 'todos') lista = lista.filter(r => r.label === _filtroAtivo);
+        if (_pesquisa) {
+            const q = _pesquisa.toLowerCase();
+            lista = lista.filter(r => r.url.toLowerCase().includes(q) || r.dominio.toLowerCase().includes(q));
+        }
+        lista.sort((a, b) => {
+            let va = a[_ordenacaoCol], vb = b[_ordenacaoCol];
+            if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+            return _ordenacaoAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+        });
+        _filtrados = lista;
+        renderTabela();
+    }
+
+    function renderTabela() {
+        const tbody  = document.getElementById('tbody-resultados');
+        const semRes = document.getElementById('sem-resultados');
+        if (_filtrados.length === 0) {
+            tbody.innerHTML = ''; semRes.style.display = 'block';
+            document.getElementById('paginacao').innerHTML = ''; return;
+        }
+        semRes.style.display = 'none';
+        const inicio  = (_paginaAtual - 1) * POR_PAGINA;
+        const pagina  = _filtrados.slice(inicio, inicio + POR_PAGINA);
+        tbody.innerHTML = pagina.map(r => {
+            const isMal = r.label === 'MALICIOSO';
+            const badge = isMal ? `<span class="badge-mal">MALICIOSO</span>` : `<span class="badge-ben">BENIGNO</span>`;
+            const cls   = isMal ? 'mal' : 'ben';
+            const prob  = `<div class="prob-mini"><div class="prob-mini-bg"><div class="prob-mini-fill ${cls}" style="width:${r.prob_maligno}%"></div></div><span style="font-size:0.78rem;color:${isMal?'#c62828':'#2e7d32'}">${r.prob_maligno}%</span></div>`;
+            return `<tr>
+                <td>${badge}</td>
+                <td>${prob}</td>
+                <td><span style="font-size:0.78rem;font-family:'Courier New',monospace">${r.metodo}</span></td>
+                <td style="font-size:0.82rem;color:#555">${r.dominio}</td>
+                <td class="url-cell">${r.url}</td>
+            </tr>`;
+        }).join('');
+        renderPaginacao();
+    }
+
+    function renderPaginacao() {
+        const total = Math.ceil(_filtrados.length / POR_PAGINA);
+        const pag   = document.getElementById('paginacao');
+        if (total <= 1) { pag.innerHTML = ''; return; }
+        pag.innerHTML = Array.from({ length: total }, (_, i) =>
+            `<button class="pag-btn${i + 1 === _paginaAtual ? ' ativo' : ''}" onclick="irPagina(${i+1})">${i+1}</button>`
+        ).join('');
+    }
+
+    function irPagina(n)  { _paginaAtual = n; renderTabela(); }
+    function filtrar(f, btn) {
+        _filtroAtivo = f; _paginaAtual = 1;
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+        aplicarFiltros();
+    }
+    function pesquisar(q) { _pesquisa = q; _paginaAtual = 1; aplicarFiltros(); }
+    function ordenar(col) {
+        if (_ordenacaoCol === col) _ordenacaoAsc = !_ordenacaoAsc;
+        else { _ordenacaoCol = col; _ordenacaoAsc = false; }
+        _paginaAtual = 1; aplicarFiltros();
+    }
+
+    // ── EXPORTAR CSV ─────────────────────────────────────────────────────────
+    function exportarCSV() {
+        if (_todosResultados.length === 0) return;
+
+        // Usa os resultados atualmente filtrados (ou todos se não há filtro)
+        const dados = _filtrados.length > 0 ? _filtrados : _todosResultados;
+
+        const cabecalho = ['Resultado', 'Prob. Malicioso (%)', 'Prob. Benigno (%)', 'Método', 'Domínio', 'URL'];
+        const linhas = dados.map(r => [
+            r.label,
+            r.prob_maligno,
+            r.prob_benigno,
+            r.metodo,
+            `"${r.dominio}"`,
+            `"${r.url.replace(/"/g, '""')}"`,  // escapar aspas no URL
+        ]);
+
+        const csv = [cabecalho, ...linhas].map(l => l.join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM para Excel
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const nomeFich = _ficheiro ? _ficheiro.name.replace('.pcap', '') : 'analise';
+        a.href     = url;
+        a.download = `urlshield_${nomeFich}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function adicionarHistorico(data) {
+        document.getElementById('hist-vazio').style.display = 'none';
+        const lista = document.getElementById('lista-historico');
+        const agora = new Date().toLocaleString('pt-PT', {
+            day:'2-digit', month:'2-digit', year:'numeric',
+            hour:'2-digit', minute:'2-digit'
+        });
+        const div = document.createElement('div');
+        div.className = 'hist-item';
+        div.innerHTML = `
+            <span class="hist-nome">📄 ${_ficheiro.name}</span>
+            <div class="hist-badges">
+                <span class="hist-badge hb-total">${data.total} URLs</span>
+                <span class="hist-badge hb-ben">${data.benignos} benignos</span>
+                <span class="hist-badge hb-mal">${data.maliciosos} maliciosos</span>
+            </div>
+            <span class="hist-data">${agora}</span>`;
+        lista.insertBefore(div, lista.firstChild);
+    }
+</script>
+</body>
+</html>

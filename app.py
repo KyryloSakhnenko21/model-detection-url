@@ -20,26 +20,22 @@ app = Flask(__name__)
 GITHUB_USER       = 'KyryloSakhnenko21'
 GITHUB_REPO       = 'modelo-deteção-url'
 FICHEIRO_FEEDBACK = 'novos_links.json'
+FICHEIRO_HISTORICO = 'historico_pcap.json'
 
 # ─────────────────────────────────────────────
-# FILA DE ALERTAS (partilhada entre monitor e SSE)
+# FILA DE ALERTAS SSE
 # ─────────────────────────────────────────────
-# Cada alerta é um dicionário com: url, prob_maligno, timestamp, iface
 fila_alertas = queue.Queue(maxsize=500)
-
-# Lista de subscritores SSE (um por cliente ligado ao /alertas/stream)
 _subscritores_sse = []
 _lock_subscritores = threading.Lock()
 
 def publicar_alerta(alerta):
-    """Coloca um alerta na fila e notifica todos os subscritores SSE."""
-    # Notifica cada subscritor (cada ligação SSE aberta)
     with _lock_subscritores:
         for q in _subscritores_sse:
             try:
                 q.put_nowait(alerta)
             except queue.Full:
-                pass  # subscritor lento — ignora
+                pass
 
 # ─────────────────────────────────────────────
 # CORS + PRIVATE NETWORK ACCESS
@@ -54,30 +50,30 @@ def adicionar_cabecalhos(response):
 
 @app.route('/classificar', methods=['OPTIONS'])
 def classificar_preflight():
-    response = make_response('', 204)
-    response.headers['Access-Control-Allow-Origin']          = '*'
-    response.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
-    response.headers['Access-Control-Allow-Private-Network'] = 'true'
-    return response
+    r = make_response('', 204)
+    r.headers['Access-Control-Allow-Origin']          = '*'
+    r.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
+    r.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
+    r.headers['Access-Control-Allow-Private-Network'] = 'true'
+    return r
 
 @app.route('/guardar_feedback', methods=['OPTIONS'])
 def feedback_preflight():
-    response = make_response('', 204)
-    response.headers['Access-Control-Allow-Origin']          = '*'
-    response.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
-    response.headers['Access-Control-Allow-Private-Network'] = 'true'
-    return response
+    r = make_response('', 204)
+    r.headers['Access-Control-Allow-Origin']          = '*'
+    r.headers['Access-Control-Allow-Methods']         = 'POST, OPTIONS'
+    r.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
+    r.headers['Access-Control-Allow-Private-Network'] = 'true'
+    return r
 
 @app.route('/alertas/stream', methods=['OPTIONS'])
 def alertas_stream_preflight():
-    response = make_response('', 204)
-    response.headers['Access-Control-Allow-Origin']          = '*'
-    response.headers['Access-Control-Allow-Methods']         = 'GET, OPTIONS'
-    response.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
-    response.headers['Access-Control-Allow-Private-Network'] = 'true'
-    return response
+    r = make_response('', 204)
+    r.headers['Access-Control-Allow-Origin']          = '*'
+    r.headers['Access-Control-Allow-Methods']         = 'GET, OPTIONS'
+    r.headers['Access-Control-Allow-Headers']         = 'Content-Type, Access-Control-Request-Private-Network'
+    r.headers['Access-Control-Allow-Private-Network'] = 'true'
+    return r
 
 # ─────────────────────────────────────────────
 # CARREGAR MODELO
@@ -262,7 +258,6 @@ def classificar_url(url):
         'top5'        : top5,
     }
 
-    # Guardar automaticamente links com alta confiança (>95%)
     if float(probs[1]) > 0.95 or float(probs[0]) > 0.95:
         label_auto = 'MALICIOSO' if predicao == 1 else 'BENIGNO'
         guardar_feedback_local(url, label_auto, fonte='auto_alta_confianca')
@@ -271,95 +266,68 @@ def classificar_url(url):
 
 
 # ─────────────────────────────────────────────
-# MONITOR EM TEMPO REAL (scapy — thread background)
+# MONITOR SCAPY EM TEMPO REAL
 # ─────────────────────────────────────────────
 _urls_vistos_monitor = set()
 _lock_urls_vistos    = threading.Lock()
 
 def _processar_pacote(pacote):
-    """Callback do scapy: chamado para cada pacote capturado."""
     try:
         from scapy.layers.http import HTTPRequest
         if not pacote.haslayer(HTTPRequest): return
-
         http = pacote[HTTPRequest]
-        host  = http.Host.decode(errors='ignore')  if http.Host  else ''
-        path  = http.Path.decode(errors='ignore')  if http.Path  else '/'
+        host   = http.Host.decode(errors='ignore')   if http.Host   else ''
+        path   = http.Path.decode(errors='ignore')   if http.Path   else '/'
         metodo = http.Method.decode(errors='ignore') if http.Method else ''
-
         if metodo not in ('GET', 'POST', 'HEAD'): return
         if not host: return
-
         url = f'http://{host}{path}'
-
-        # Evitar duplicados
         with _lock_urls_vistos:
             if url in _urls_vistos_monitor: return
             _urls_vistos_monitor.add(url)
-
-        # Classificar
         features = extrair_features(url)
         X = pd.DataFrame([features])[FEATURE_ORDER]
         probs    = modelo.predict_proba(X)[0]
         predicao = int(modelo.predict(X)[0])
-
         prob_mal = round(float(probs[1]) * 100, 2)
         ts = datetime.now().strftime('%H:%M:%S')
-
-        # Imprimir no terminal sempre
         cor = '\033[91m' if predicao == 1 else '\033[92m'
         reset = '\033[0m'
         label = 'MALICIOSO' if predicao == 1 else 'BENIGNO  '
         print(f'[{ts}] {cor}{label}{reset}  {prob_mal:5.1f}%  {url}')
-
-        # Só publica alerta SSE se for malicioso
         if predicao == 1:
-            alerta = {
-                'url'         : url,
-                'prob_maligno': prob_mal,
-                'timestamp'   : ts,
-                'fonte'       : 'monitor_rede',
-            }
-            publicar_alerta(alerta)
-
+            publicar_alerta({
+                'url': url, 'prob_maligno': prob_mal,
+                'timestamp': ts, 'fonte': 'monitor_rede',
+            })
     except Exception:
-        pass  # pacotes malformados — ignorar silenciosamente
-
+        pass
 
 def _iniciar_monitor():
-    """Tenta importar scapy e iniciar o sniff. Corre em thread separada."""
     try:
         from scapy.all import sniff
         print('[Monitor] ✓ Scapy carregado — a monitorizar tráfego HTTP (porta 80)...')
         print('[Monitor]   (requer Npcap instalado e privilégios de administrador)')
-        sniff(
-            filter='tcp port 80',
-            prn=_processar_pacote,
-            store=False,
-        )
+        sniff(filter='tcp port 80', prn=_processar_pacote, store=False)
     except ImportError:
         print('[Monitor] ✗ Scapy não instalado. Execute: pip install scapy')
-        print('[Monitor]   O Flask continua a funcionar normalmente sem o monitor.')
     except PermissionError:
-        print('[Monitor] ✗ Sem permissões para capturar tráfego.')
-        print('[Monitor]   Execute o app.py como Administrador (Windows) ou com sudo (Linux).')
+        print('[Monitor] ✗ Sem permissões. Execute como Administrador.')
     except OSError as e:
-        if 'Npcap' in str(e) or 'winpcap' in str(e).lower() or 'no suitable' in str(e).lower():
+        if 'npcap' in str(e).lower() or 'no suitable' in str(e).lower() or 'winpcap' in str(e).lower():
             print('[Monitor] ✗ Npcap não encontrado. Instale em: https://npcap.com/')
         else:
-            print(f'[Monitor] ✗ Erro ao iniciar monitor: {e}')
+            print(f'[Monitor] ✗ Erro: {e}')
     except Exception as e:
         print(f'[Monitor] ✗ Erro inesperado: {e}')
 
-
 def arrancar_monitor():
-    """Arranca o monitor scapy numa thread daemon (termina com o Flask)."""
     t = threading.Thread(target=_iniciar_monitor, daemon=True, name='MonitorScapy')
     t.start()
 
 
 # ─────────────────────────────────────────────
-# SISTEMA DE FEEDBACK E GIT
+# FEEDBACK E GIT
 # ─────────────────────────────────────────────
 def carregar_feedback():
     if os.path.exists(FICHEIRO_FEEDBACK):
@@ -367,29 +335,20 @@ def carregar_feedback():
             return json.load(f)
     return []
 
-
 def guardar_feedback_local(url, label, fonte='utilizador'):
     dados = carregar_feedback()
-    urls_existentes = {entry['url'] for entry in dados}
-    if url in urls_existentes:
-        return False
-    entrada = {
-        'url'      : url,
-        'label'    : label,
-        'fonte'    : fonte,
-        'timestamp': datetime.now().isoformat()
-    }
-    dados.append(entrada)
+    if url in {e['url'] for e in dados}: return False
+    dados.append({'url': url, 'label': label, 'fonte': fonte,
+                  'timestamp': datetime.now().isoformat()})
     with open(FICHEIRO_FEEDBACK, 'w', encoding='utf-8') as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
     return True
 
-
 def fazer_git_push(url, label):
     try:
         subprocess.run(['git', 'add', FICHEIRO_FEEDBACK], check=True, capture_output=True)
-        msg_commit = f'feedback: {label} — {url[:60]}'
-        subprocess.run(['git', 'commit', '-m', msg_commit], check=True, capture_output=True)
+        subprocess.run(['git', 'commit', '-m', f'feedback: {label} — {url[:60]}'],
+                       check=True, capture_output=True)
         subprocess.run(['git', 'push'], check=True, capture_output=True)
         return True
     except subprocess.CalledProcessError:
@@ -397,13 +356,42 @@ def fazer_git_push(url, label):
 
 
 # ─────────────────────────────────────────────
-# ROTAS
+# HISTÓRICO DE ANÁLISES PCAP
+# ─────────────────────────────────────────────
+def carregar_historico():
+    if os.path.exists(FICHEIRO_HISTORICO):
+        with open(FICHEIRO_HISTORICO, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def guardar_historico(entrada):
+    dados = carregar_historico()
+    dados.insert(0, entrada)
+    dados = dados[:20]  # guardar apenas as últimas 20 análises
+    with open(FICHEIRO_HISTORICO, 'w', encoding='utf-8') as f:
+        json.dump(dados, f, ensure_ascii=False, indent=2)
+
+
+# ─────────────────────────────────────────────
+# ROTAS — PÁGINAS
 # ─────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/monitor')
+def monitor():
+    return render_template('monitor.html')
 
+@app.route('/wireshark')
+def wireshark():
+    historico = carregar_historico()
+    return render_template('wireshark.html', historico=historico)
+
+
+# ─────────────────────────────────────────────
+# ROTAS — API
+# ─────────────────────────────────────────────
 @app.route('/classificar', methods=['POST'])
 def classificar():
     data = request.get_json()
@@ -415,103 +403,156 @@ def classificar():
     except Exception as e:
         return jsonify({'erro': f'Erro ao processar o URL: {str(e)}'}), 500
 
-
 @app.route('/guardar_feedback', methods=['POST'])
 def guardar_feedback():
     data  = request.get_json()
     url   = data.get('url', '').strip()
     label = data.get('label', '').strip().upper()
-
     if not url:
         return jsonify({'erro': 'URL não pode estar vazio.'}), 400
     if label not in ('BENIGNO', 'MALICIOSO'):
-        return jsonify({'erro': 'Label inválido. Use BENIGNO ou MALICIOSO.'}), 400
-
+        return jsonify({'erro': 'Label inválido.'}), 400
     novo = guardar_feedback_local(url, label, fonte='utilizador')
     if not novo:
-        return jsonify({'ok': True, 'mensagem': 'URL já existia no feedback.', 'push': False})
-
+        return jsonify({'ok': True, 'mensagem': 'URL já existia.', 'push': False})
     push_ok = fazer_git_push(url, label)
-    return jsonify({
-        'ok'      : True,
-        'mensagem': 'Feedback guardado e enviado para GitHub.' if push_ok else 'Feedback guardado localmente (push falhou).',
-        'push'    : push_ok
-    })
+    return jsonify({'ok': True,
+                    'mensagem': 'Guardado e enviado para GitHub.' if push_ok else 'Guardado localmente (push falhou).',
+                    'push': push_ok})
 
-
-# ─────────────────────────────────────────────
-# SSE — STREAM DE ALERTAS EM TEMPO REAL
-# ─────────────────────────────────────────────
 @app.route('/alertas/stream')
 def alertas_stream():
-    """
-    Endpoint SSE. Cada cliente que se liga recebe a sua fila individual.
-    O monitor publica alertas → publicar_alerta() → cada fila individual é notificada.
-    """
-    # Criar uma fila individual para este cliente
     q_cliente = queue.Queue(maxsize=100)
     with _lock_subscritores:
         _subscritores_sse.append(q_cliente)
 
     def gerar():
-        # Heartbeat inicial para confirmar ligação
         yield 'data: {"tipo":"ligado"}\n\n'
         try:
             while True:
                 try:
-                    # Bloqueia até 25 segundos; se não houver alerta, envia heartbeat
                     alerta = q_cliente.get(timeout=25)
                     payload = json.dumps({
-                        'tipo'        : 'alerta',
-                        'url'         : alerta['url'],
+                        'tipo': 'alerta', 'url': alerta['url'],
                         'prob_maligno': alerta['prob_maligno'],
-                        'timestamp'   : alerta['timestamp'],
-                        'fonte'       : alerta.get('fonte', 'monitor_rede'),
+                        'timestamp': alerta['timestamp'],
+                        'fonte': alerta.get('fonte', 'monitor_rede'),
                     }, ensure_ascii=False)
                     yield f'data: {payload}\n\n'
                 except queue.Empty:
-                    # Heartbeat a cada 25 s para manter a ligação viva
                     yield 'data: {"tipo":"heartbeat"}\n\n'
         except GeneratorExit:
             pass
         finally:
-            # Remover cliente da lista quando fechar a ligação
             with _lock_subscritores:
                 try:
                     _subscritores_sse.remove(q_cliente)
                 except ValueError:
                     pass
 
-    return Response(
-        stream_with_context(gerar()),
-        mimetype='text/event-stream',
-        headers={
-            'Cache-Control'              : 'no-cache',
-            'X-Accel-Buffering'          : 'no',
-            'Access-Control-Allow-Origin': '*',
-        }
-    )
-
+    return Response(stream_with_context(gerar()), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no',
+                             'Access-Control-Allow-Origin': '*'})
 
 @app.route('/alertas/injetar', methods=['POST'])
 def alertas_injetar():
-    """
-    Endpoint auxiliar: permite injetar um alerta manualmente (útil para testes).
-    Corpo JSON: { "url": "...", "prob_maligno": 87.5 }
-    """
     data = request.get_json()
     url  = data.get('url', '').strip()
     prob = float(data.get('prob_maligno', 0.0))
     if not url:
         return jsonify({'erro': 'URL obrigatório'}), 400
-    alerta = {
-        'url'         : url,
-        'prob_maligno': prob,
-        'timestamp'   : datetime.now().strftime('%H:%M:%S'),
-        'fonte'       : 'manual',
-    }
-    publicar_alerta(alerta)
-    return jsonify({'ok': True, 'mensagem': f'Alerta injetado: {url}'})
+    publicar_alerta({'url': url, 'prob_maligno': prob,
+                     'timestamp': datetime.now().strftime('%H:%M:%S'), 'fonte': 'manual'})
+    return jsonify({'ok': True})
+
+@app.route('/analisar_pcap', methods=['POST'])
+def analisar_pcap():
+    if 'ficheiro' not in request.files:
+        return jsonify({'erro': 'Nenhum ficheiro enviado.'}), 400
+    f = request.files['ficheiro']
+    if not f.filename.endswith('.pcap'):
+        return jsonify({'erro': 'O ficheiro tem de ser .pcap'}), 400
+
+    # Guardar temporariamente
+    caminho_tmp = os.path.join('uploads_tmp', f.filename)
+    os.makedirs('uploads_tmp', exist_ok=True)
+    f.save(caminho_tmp)
+
+    try:
+        from scapy.all import rdpcap, TCP, Raw
+        pacotes = rdpcap(caminho_tmp)
+    except ImportError:
+        os.remove(caminho_tmp)
+        return jsonify({'erro': 'Scapy não instalado. Execute: pip install scapy'}), 500
+    except Exception as e:
+        os.remove(caminho_tmp)
+        return jsonify({'erro': f'Erro ao ler o ficheiro: {str(e)}'}), 500
+
+    urls_vistos = set()
+    resultados  = []
+
+    for pkt in pacotes:
+        try:
+            if not (pkt.haslayer(TCP) and pkt.haslayer(Raw)): continue
+            payload = pkt[Raw].load.decode(errors='ignore')
+            linhas  = payload.split('\r\n')
+            if not linhas: continue
+            primeira = linhas[0].split()
+            if len(primeira) < 2 or primeira[0] not in ('GET', 'POST', 'HEAD'): continue
+            metodo = primeira[0]
+            uri    = primeira[1]
+            host   = ''
+            for linha in linhas[1:]:
+                if linha.lower().startswith('host:'):
+                    host = linha.split(':', 1)[1].strip()
+                    break
+            if not host: continue
+            url = f'http://{host}{uri}'
+            if url in urls_vistos: continue
+            urls_vistos.add(url)
+
+            features = extrair_features(url)
+            X = pd.DataFrame([features])[FEATURE_ORDER]
+            probs    = modelo.predict_proba(X)[0]
+            predicao = int(modelo.predict(X)[0])
+
+            resultados.append({
+                'url'         : url,
+                'metodo'      : metodo,
+                'dominio'     : host,
+                'label'       : 'MALICIOSO' if predicao == 1 else 'BENIGNO',
+                'prob_maligno': round(float(probs[1]) * 100, 1),
+                'prob_benigno': round(float(probs[0]) * 100, 1),
+            })
+        except Exception:
+            continue
+
+    os.remove(caminho_tmp)
+
+    total      = len(resultados)
+    maliciosos = sum(1 for r in resultados if r['label'] == 'MALICIOSO')
+    benignos   = total - maliciosos
+
+    # Guardar no histórico
+    guardar_historico({
+        'ficheiro'  : f.filename,
+        'data'      : datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'total'     : total,
+        'maliciosos': maliciosos,
+        'benignos'  : benignos,
+    })
+
+    return jsonify({
+        'ok'        : True,
+        'total'     : total,
+        'maliciosos': maliciosos,
+        'benignos'  : benignos,
+        'resultados': resultados,
+    })
+
+@app.route('/historico_pcap')
+def historico_pcap():
+    return jsonify(carregar_historico())
 
 
 # ─────────────────────────────────────────────

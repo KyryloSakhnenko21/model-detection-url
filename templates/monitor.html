@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shield — Monitor em Tempo Real</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+        nav { background: #0a1535; padding: 0 40px; display: flex; align-items: center; gap: 0; }
+        .nav-brand { color: white; font-weight: 700; font-size: 0.95rem; padding: 14px 20px 14px 0; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 10px; white-space: nowrap; }
+        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; padding: 14px 16px; transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .nav-link:hover { color: white; }
+        .nav-link.ativo { color: white; border-bottom-color: #e53935; }
+        header { background: linear-gradient(135deg, #7b1a1a 0%, #c62828 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+        header h1 { font-size: 1.7rem; font-weight: 700; }
+        header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
+        main { max-width: 920px; margin: 36px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-titulo { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+        .estado-row { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #888; }
+        .estado-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+        .estado-dot.ligado    { background: #43a047; box-shadow: 0 0 6px #43a04788; animation: pulsar 2s infinite; }
+        .estado-dot.desligado { background: #e53935; }
+        .estado-dot.aguardar  { background: #f59e0b; animation: pulsar 1s infinite; }
+        @keyframes pulsar { 0%,100%{opacity:1}50%{opacity:0.35} }
+        .contadores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 0; }
+        .contador { background: #f5f7fa; border-radius: 10px; padding: 18px; text-align: center; }
+        .contador .val { font-size: 2.2rem; font-weight: 700; line-height: 1; font-family: 'Courier New', monospace; }
+        .contador .rot { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+        .contador.c-total  .val { color: #1565c0; }
+        .contador.c-benign .val { color: #2e7d32; }
+        .contador.c-malic  .val { color: #c62828; }
+        .btn-limpar { background: none; border: 1px solid #e0e0e0; border-radius: 6px; color: #aaa; font-size: 0.78rem; padding: 5px 12px; cursor: pointer; transition: all 0.2s; }
+        .btn-limpar:hover { border-color: #e53935; color: #e53935; }
+        #lista-alertas { list-style: none; max-height: 480px; overflow-y: auto; }
+        #lista-alertas::-webkit-scrollbar { width: 4px; }
+        #lista-alertas::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
+        .alerta-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; background: #fff8f8; border: 1px solid #ffcdd2; animation: entrar 0.3s ease; }
+        @keyframes entrar { from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)} }
+        .alerta-prob { flex-shrink:0; background:#ffebee; color:#c62828; font-size:0.82rem; font-weight:700; padding:4px 10px; border-radius:5px; font-family:'Courier New',monospace; border:1px solid #ef9a9a; min-width:52px; text-align:center; }
+        .alerta-info { flex:1; min-width:0; }
+        .alerta-url  { font-family:'Courier New',monospace; font-size:0.8rem; color:#c62828; word-break:break-all; }
+        .alerta-meta { font-size:0.72rem; color:#aaa; margin-top:3px; }
+        .btn-benigno { flex-shrink:0; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:5px; color:#2e7d32; font-size:0.76rem; font-weight:600; padding:5px 12px; cursor:pointer; transition:background 0.2s; white-space:nowrap; }
+        .btn-benigno:hover { background:#c8e6c9; }
+        .btn-benigno:disabled { opacity:0.45; cursor:not-allowed; }
+        .btn-benigno.confirm { opacity:0.6; cursor:default; }
+        #monitor-vazio { text-align:center; padding:36px 0; color:#bbb; font-size:0.9rem; }
+        footer { text-align:center; color:#aaa; font-size:0.78rem; padding:20px; }
+    </style>
+</head>
+<body>
+<nav>
+    <span class="nav-brand">🛡️ URL Shield</span>
+    <a href="/" class="nav-link">🔍 Analisar URL</a>
+    <a href="/monitor" class="nav-link ativo">⚡ Monitor em Tempo Real</a>
+    <a href="/wireshark" class="nav-link">📡 Análise Wireshark</a>
+</nav>
+<header>
+    <h1>⚡ Monitor de Rede em Tempo Real</h1>
+    <p>Captura e classifica tráfego HTTP ao vivo · Projeto II · ESTCB · 2025/2026</p>
+</header>
+<main>
+    <div class="card">
+        <div class="card-titulo">
+            <span>Estado do monitor</span>
+            <div class="estado-row">
+                <div class="estado-dot aguardar" id="estado-dot"></div>
+                <span id="estado-texto">A ligar...</span>
+            </div>
+        </div>
+        <div class="contadores">
+            <div class="contador c-total" ><div class="val" id="mc-total" >0</div><div class="rot">Detetados</div></div>
+            <div class="contador c-benign"><div class="val" id="mc-benign">0</div><div class="rot">Benignos</div></div>
+            <div class="contador c-malic" ><div class="val" id="mc-malic" >0</div><div class="rot">Maliciosos</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-titulo">
+            <span>⚠️ URLs Maliciosos Detetados</span>
+            <button class="btn-limpar" onclick="limparAlertas()">Limpar lista</button>
+        </div>
+        <div id="monitor-vazio">
+            Nenhum URL malicioso detetado ainda.<br>
+            <span style="font-size:0.78rem;">O monitor captura tráfego HTTP automaticamente quando o Flask corre como Administrador.</span>
+        </div>
+        <ul id="lista-alertas" style="display:none;"></ul>
+    </div>
+</main>
+<footer>Kyrylo Sakhnenko &amp; Rodrigo Figueiredo · ESTCB · IPCB · 2025/2026</footer>
+
+<script>
+// ── CHAVE DE SESSÃO ──────────────────────────────────────────
+const CHAVE_ALERTAS = 'urlshield_alertas_monitor';
+
+// ── ESTADO (carregado do sessionStorage ao entrar na página) ─
+let _alertas = [];
+let _total   = 0;
+let _malic   = 0;
+
+function guardarEstado() {
+    sessionStorage.setItem(CHAVE_ALERTAS, JSON.stringify({
+        alertas: _alertas, total: _total, malic: _malic
+    }));
+}
+
+function carregarEstado() {
+    try {
+        const raw = sessionStorage.getItem(CHAVE_ALERTAS);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        _alertas = s.alertas || [];
+        _total   = s.total   || 0;
+        _malic   = s.malic   || 0;
+    } catch { _alertas = []; _total = 0; _malic = 0; }
+}
+
+// ── INTERFACE ────────────────────────────────────────────────
+function definirEstado(e) {
+    const dot = document.getElementById('estado-dot');
+    const txt = document.getElementById('estado-texto');
+    dot.className = 'estado-dot ' + e;
+    txt.textContent = { ligado:'Monitor ativo', desligado:'Monitor desligado', aguardar:'A ligar...' }[e] || e;
+}
+
+function atualizarContadores() {
+    document.getElementById('mc-total').textContent  = _total;
+    document.getElementById('mc-benign').textContent = _total - _malic;
+    document.getElementById('mc-malic').textContent  = _malic;
+}
+
+function renderizarLista() {
+    const lista  = document.getElementById('lista-alertas');
+    const vazio  = document.getElementById('monitor-vazio');
+    if (_alertas.length === 0) {
+        lista.style.display = 'none';
+        vazio.style.display = 'block';
+        return;
+    }
+    vazio.style.display  = 'none';
+    lista.style.display  = 'block';
+    lista.innerHTML      = '';
+    // Mais recentes primeiro
+    [..._alertas].reverse().forEach(alerta => {
+        lista.appendChild(criarItemAlerta(alerta));
+    });
+}
+
+function criarItemAlerta(alerta) {
+    const li = document.createElement('li');
+    li.className = 'alerta-item';
+
+    const prob = document.createElement('span');
+    prob.className   = 'alerta-prob';
+    prob.textContent = Math.round(alerta.prob_maligno) + '%';
+
+    const info = document.createElement('div');
+    info.className = 'alerta-info';
+    const urlEl = document.createElement('div');
+    urlEl.className   = 'alerta-url';
+    urlEl.textContent = alerta.url;
+    const meta = document.createElement('div');
+    meta.className   = 'alerta-meta';
+    meta.textContent = alerta.timestamp;
+    info.appendChild(urlEl);
+    info.appendChild(meta);
+
+    const btn = document.createElement('button');
+    btn.className   = 'btn-benigno';
+    btn.textContent = '✓ Benigno';
+    if (alerta.guardado) { btn.textContent = '✓ Guardado'; btn.classList.add('confirm'); btn.disabled = true; }
+    btn.onclick = function () {
+        btn.disabled = true; btn.textContent = '...';
+        fetch('/guardar_feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: alerta.url, label: 'BENIGNO' })
+        })
+        .then(r => r.json())
+        .then(() => {
+            btn.textContent = '✓ Guardado'; btn.classList.add('confirm');
+            // Marcar como guardado no estado persistido
+            alerta.guardado = true;
+            guardarEstado();
+        })
+        .catch(() => { btn.disabled = false; btn.textContent = '✓ Benigno'; });
+    };
+
+    li.appendChild(prob);
+    li.appendChild(info);
+    li.appendChild(btn);
+    return li;
+}
+
+function adicionarAlerta(alerta) {
+    // Evitar duplicados
+    if (_alertas.some(a => a.url === alerta.url)) return;
+    _alertas.push(alerta);
+    _total++;
+    _malic++;
+    guardarEstado();
+    atualizarContadores();
+
+    const vazio = document.getElementById('monitor-vazio');
+    const lista = document.getElementById('lista-alertas');
+    vazio.style.display = 'none';
+    lista.style.display = 'block';
+    // Inserir no topo
+    lista.insertBefore(criarItemAlerta(alerta), lista.firstChild);
+}
+
+function limparAlertas() {
+    _alertas = []; _total = 0; _malic = 0;
+    guardarEstado();
+    atualizarContadores();
+    document.getElementById('lista-alertas').innerHTML = '';
+    document.getElementById('lista-alertas').style.display = 'none';
+    document.getElementById('monitor-vazio').style.display = 'block';
+}
+
+// ── SSE ──────────────────────────────────────────────────────
+function iniciarSSE() {
+    definirEstado('aguardar');
+    const source = new EventSource('/alertas/stream');
+    source.onmessage = function (e) {
+        try {
+            const d = JSON.parse(e.data);
+            if (d.tipo === 'ligado')    { definirEstado('ligado'); return; }
+            if (d.tipo === 'heartbeat') return;
+            if (d.tipo === 'alerta')    adicionarAlerta(d);
+        } catch {}
+    };
+    source.onerror = function () {
+        definirEstado('desligado');
+        source.close();
+        setTimeout(() => iniciarSSE(), 10000);
+    };
+}
+
+// ── ARRANQUE ─────────────────────────────────────────────────
+carregarEstado();
+atualizarContadores();
+renderizarLista();
+iniciarSSE();
+</script>
+</body>
+</html>

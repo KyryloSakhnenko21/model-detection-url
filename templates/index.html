@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detetor de URLs Maliciosos</title>
+    <title>URL Shield — Analisar URL</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+
+        /* ── NAVEGAÇÃO ── */
+        nav { background: #0a1535; padding: 0 40px; display: flex; align-items: center; gap: 0; }
+        .nav-brand { color: white; font-weight: 700; font-size: 0.95rem; padding: 14px 20px 14px 0; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 10px; white-space: nowrap; }
+        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; padding: 14px 16px; transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .nav-link:hover { color: white; }
+        .nav-link.ativo { color: white; border-bottom-color: #1565c0; }
 
         header { background: linear-gradient(135deg, #0d1b4b 0%, #1565c0 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
         header h1 { font-size: 1.7rem; font-weight: 700; }
         header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
 
         main { max-width: 920px; margin: 36px auto; padding: 0 20px; }
-
         .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
         .input-label { font-size: 0.82rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
@@ -21,7 +27,6 @@
         #url-input { flex: 1; padding: 14px 18px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; font-family: 'Courier New', monospace; }
         #url-input:focus { border-color: #1565c0; }
         #url-input.error { border-color: #e53935; }
-
         #btn { padding: 14px 28px; background: #1565c0; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
         #btn:hover { background: #0d47a1; }
         #btn:disabled { background: #90a4ae; cursor: not-allowed; }
@@ -34,7 +39,6 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #resultado { display: none; }
-
         .res-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #f0f0f0; }
         .badge { padding: 10px 26px; border-radius: 30px; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
         .badge.mal { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
@@ -62,129 +66,32 @@
         th { background: #f5f7fa; color: #555; font-weight: 600; padding: 8px 10px; text-align: left; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; }
         td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; }
         tr:last-child td { border-bottom: none; }
-
         .feat-name { font-size: 0.84rem; color: #333; }
         .vbadge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
         .vbadge.sim { background: #ffebee; color: #c62828; }
         .vbadge.nao { background: #e8f5e9; color: #2e7d32; }
         .vbadge.num { background: #f5f5f5; color: #333; }
-
         .imp-wrap { display: flex; align-items: center; gap: 8px; }
         .imp-bg { width: 80px; height: 8px; background: #e8eaf6; border-radius: 4px; overflow: hidden; }
         .imp-fill { height: 100%; background: #1565c0; border-radius: 4px; }
         .imp-val { font-size: 0.82rem; color: #888; }
 
         #erro { display: none; background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; margin-top: 10px; border: 1px solid #ef9a9a; }
-
-        /* ── MONITOR EM TEMPO REAL ───────────────────────────── */
-        #card-monitor { border: 2px solid #e53935; }
-
-        .monitor-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        .monitor-titulo {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.82rem; font-weight: 700; color: #c62828;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .monitor-titulo .dot { background: #e53935; }
-
-        .monitor-estado {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; color: #888;
-        }
-        .estado-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #bbb; flex-shrink: 0;
-        }
-        .estado-dot.ligado   { background: #43a047; box-shadow: 0 0 6px #43a04788; animation: pulsar 2s infinite; }
-        .estado-dot.desligado { background: #e53935; }
-        .estado-dot.aguardar  { background: #f59e0b; animation: pulsar 1s infinite; }
-        @keyframes pulsar { 0%,100%{opacity:1} 50%{opacity:0.35} }
-
-        .monitor-contadores {
-            display: flex; gap: 16px; margin-bottom: 16px;
-        }
-        .monitor-contador {
-            background: #f5f7fa; border-radius: 8px; padding: 10px 18px;
-            text-align: center; flex: 1;
-        }
-        .monitor-contador .mc-val {
-            font-size: 1.5rem; font-weight: 700; line-height: 1;
-            font-family: 'Courier New', monospace;
-        }
-        .monitor-contador .mc-rot {
-            font-size: 0.72rem; color: #888; text-transform: uppercase;
-            letter-spacing: 0.5px; margin-top: 4px;
-        }
-        .monitor-contador.mc-total  .mc-val { color: #1565c0; }
-        .monitor-contador.mc-benign .mc-val { color: #2e7d32; }
-        .monitor-contador.mc-malic  .mc-val { color: #c62828; }
-
-        #lista-alertas {
-            list-style: none; max-height: 280px; overflow-y: auto;
-        }
-        #lista-alertas::-webkit-scrollbar { width: 4px; }
-        #lista-alertas::-webkit-scrollbar-track { background: transparent; }
-        #lista-alertas::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
-
-        .alerta-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 10px; border-radius: 7px; margin-bottom: 6px;
-            background: #fff8f8; border: 1px solid #ffcdd2;
-            animation: entrar 0.3s ease;
-        }
-        @keyframes entrar { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-
-        .alerta-prob {
-            flex-shrink: 0; background: #ffebee; color: #c62828;
-            font-size: 0.8rem; font-weight: 700; padding: 3px 8px;
-            border-radius: 5px; font-family: 'Courier New', monospace;
-            border: 1px solid #ef9a9a;
-        }
-        .alerta-info { flex: 1; min-width: 0; }
-        .alerta-url {
-            font-family: 'Courier New', monospace; font-size: 0.78rem;
-            color: #c62828; word-break: break-all;
-        }
-        .alerta-hora { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
-
-        .btn-benigno-app {
-            flex-shrink: 0; background: #e8f5e9; border: 1px solid #a5d6a7;
-            border-radius: 5px; color: #2e7d32; font-size: 0.76rem;
-            font-weight: 600; padding: 4px 10px; cursor: pointer;
-            transition: background 0.2s; white-space: nowrap;
-        }
-        .btn-benigno-app:hover   { background: #c8e6c9; }
-        .btn-benigno-app:disabled { opacity: 0.45; cursor: not-allowed; }
-        .btn-benigno-app.confirm  { opacity: 0.6; cursor: default; }
-
-        #monitor-vazio {
-            text-align: center; padding: 24px 0;
-            color: #bbb; font-size: 0.88rem;
-        }
-
-        .btn-limpar-monitor {
-            background: none; border: 1px solid #e0e0e0; border-radius: 6px;
-            color: #aaa; font-size: 0.78rem; padding: 4px 10px;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .btn-limpar-monitor:hover { border-color: #e53935; color: #e53935; }
-        /* ───────────────────────────────────────────────────── */
-
         footer { text-align: center; color: #aaa; font-size: 0.78rem; padding: 20px; }
     </style>
 </head>
 <body>
-
+<nav>
+    <span class="nav-brand">🛡️ URL Shield</span>
+    <a href="/" class="nav-link ativo">🔍 Analisar URL</a>
+    <a href="/monitor" class="nav-link">⚡ Monitor em Tempo Real</a>
+    <a href="/wireshark" class="nav-link">📡 Análise Wireshark</a>
+</nav>
 <header>
-    <h1>🔍 Detetor de URLs Maliciosos</h1>
+    <h1>🔍 Analisar URL</h1>
     <p>Inteligência Artificial aplicada à Cibersegurança · Projeto II · ESTCB · 2025/2026</p>
 </header>
-
 <main>
-    <!-- ── ANALISAR URL ──────────────────────────────────────── -->
     <div class="card">
         <label class="input-label" for="url-input">Insira um URL para analisar</label>
         <div class="input-row">
@@ -201,9 +108,7 @@
         </div>
         <div id="erro"></div>
     </div>
-
     <div id="loading"><div class="spinner"></div>A analisar o URL...</div>
-
     <div id="resultado">
         <div class="card">
             <div class="res-header">
@@ -222,283 +127,77 @@
                 <span id="vb" class="prob-val b">0%</span>
             </div>
         </div>
-
         <div class="grid2">
             <div class="card">
                 <div class="sec-title"><div class="dot"></div>Características do URL</div>
-                <table>
-                    <thead><tr><th>Feature</th><th>Valor</th></tr></thead>
-                    <tbody id="tb-features"></tbody>
-                </table>
+                <table><thead><tr><th>Feature</th><th>Valor</th></tr></thead><tbody id="tb-features"></tbody></table>
             </div>
             <div class="card">
                 <div class="sec-title"><div class="dot"></div>Features Mais Influentes</div>
-                <table>
-                    <thead><tr><th>Feature</th><th>Importância</th></tr></thead>
-                    <tbody id="tb-imp"></tbody>
-                </table>
+                <table><thead><tr><th>Feature</th><th>Importância</th></tr></thead><tbody id="tb-imp"></tbody></table>
             </div>
         </div>
     </div>
-
-    <!-- ── MONITOR EM TEMPO REAL ─────────────────────────────── -->
-    <div class="card" id="card-monitor">
-        <div class="monitor-header">
-            <div class="monitor-titulo">
-                <div class="dot"></div>
-                ⚡ Monitor de Rede em Tempo Real
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-                <button class="btn-limpar-monitor" onclick="limparAlertas()">Limpar</button>
-                <div class="monitor-estado">
-                    <div class="estado-dot aguardar" id="estado-dot"></div>
-                    <span id="estado-texto">A ligar...</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="monitor-contadores">
-            <div class="monitor-contador mc-total">
-                <div class="mc-val" id="mc-total">0</div>
-                <div class="mc-rot">Detetados</div>
-            </div>
-            <div class="monitor-contador mc-benign">
-                <div class="mc-val" id="mc-benign">0</div>
-                <div class="mc-rot">Benignos</div>
-            </div>
-            <div class="monitor-contador mc-malic">
-                <div class="mc-val" id="mc-malic">0</div>
-                <div class="mc-rot">Maliciosos</div>
-            </div>
-        </div>
-
-        <div id="monitor-vazio">
-            Nenhum URL malicioso detetado ainda.<br>
-            <span style="font-size:0.78rem;">O monitor captura tráfego HTTP automaticamente.</span>
-        </div>
-        <ul id="lista-alertas" style="display:none;"></ul>
-    </div>
-    <!-- ───────────────────────────────────────────────────────── -->
 </main>
-
-<footer>
-    Kyrylo Sakhnenko &amp; Rodrigo Figueiredo · ESTCB · IPCB · 2025/2026
-</footer>
-
+<footer>Kyrylo Sakhnenko &amp; Rodrigo Figueiredo · ESTCB · IPCB · 2025/2026</footer>
 <script>
-    // ── ANALISAR URL ─────────────────────────────────────────────
     document.getElementById('url-input').addEventListener('keydown', e => { if (e.key === 'Enter') analisar(); });
     function testar(url) { document.getElementById('url-input').value = url; analisar(); }
-
     const LABELS = {
-        lex_comp_url: 'Comprimento do URL', lex_comp_dominio: 'Comprimento do domínio',
-        lex_comp_path: 'Comprimento do path', lex_n_subdominios: 'Nº de subdomínios',
-        lex_n_digitos: 'Nº de dígitos', lex_profundidade: 'Profundidade do path',
-        lex_palavras_suspeitas: 'Palavras suspeitas', lex_entropia_url: 'Entropia do URL',
-        lex_entropia_dominio: 'Entropia do domínio', lex_tem_https: 'Usa HTTPS',
-        lex_tem_ip: 'IP no URL', lex_tem_arroba: 'Contém @',
-        lex_tld_suspeito: 'TLD suspeito', lex_encurtador: 'Encurtador de URL',
+        lex_comp_url:'Comprimento do URL',lex_comp_dominio:'Comprimento do domínio',
+        lex_comp_path:'Comprimento do path',lex_n_subdominios:'Nº de subdomínios',
+        lex_n_digitos:'Nº de dígitos',lex_profundidade:'Profundidade do path',
+        lex_palavras_suspeitas:'Palavras suspeitas',lex_entropia_url:'Entropia do URL',
+        lex_entropia_dominio:'Entropia do domínio',lex_tem_https:'Usa HTTPS',
+        lex_tem_ip:'IP no URL',lex_tem_arroba:'Contém @',
+        lex_tld_suspeito:'TLD suspeito',lex_encurtador:'Encurtador de URL',
     };
     const BOOL_FEATS = ['lex_tem_https','lex_tem_ip','lex_tem_arroba','lex_tld_suspeito','lex_encurtador'];
-
     function analisar() {
         const input = document.getElementById('url-input');
         const url = input.value.trim();
         const erro = document.getElementById('erro');
-        erro.style.display = 'none';
-        input.classList.remove('error');
-
-        if (!url) {
-            erro.textContent = 'Por favor insira um URL antes de analisar.';
-            erro.style.display = 'block';
-            input.classList.add('error');
-            return;
-        }
-
+        erro.style.display = 'none'; input.classList.remove('error');
+        if (!url) { erro.textContent='Por favor insira um URL.'; erro.style.display='block'; input.classList.add('error'); return; }
         document.getElementById('loading').style.display = 'block';
         document.getElementById('resultado').style.display = 'none';
         document.getElementById('btn').disabled = true;
-
-        fetch('/classificar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-        })
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('btn').disabled = false;
-            if (data.erro) { erro.textContent = data.erro; erro.style.display = 'block'; return; }
+        fetch('/classificar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})})
+        .then(r=>r.json()).then(data=>{
+            document.getElementById('loading').style.display='none';
+            document.getElementById('btn').disabled=false;
+            if(data.erro){erro.textContent=data.erro;erro.style.display='block';return;}
             mostrar(data);
-        })
-        .catch(() => {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('btn').disabled = false;
-            erro.textContent = 'Erro de ligação ao servidor.';
-            erro.style.display = 'block';
+        }).catch(()=>{
+            document.getElementById('loading').style.display='none';
+            document.getElementById('btn').disabled=false;
+            erro.textContent='Erro de ligação ao servidor.';erro.style.display='block';
         });
     }
-
     function mostrar(d) {
-        const isMal = d.predicao === 1;
-        const badge = document.getElementById('badge');
-        badge.textContent = d.label;
-        badge.className = 'badge ' + (isMal ? 'mal' : 'ben');
-        document.getElementById('url-disp').textContent = d.url;
-
-        document.getElementById('bm').style.width = d.prob_maligno + '%';
-        document.getElementById('bb').style.width = d.prob_benigno + '%';
-        document.getElementById('vm').textContent = d.prob_maligno + '%';
-        document.getElementById('vb').textContent = d.prob_benigno + '%';
-
-        const tf = document.getElementById('tb-features');
-        tf.innerHTML = '';
-        for (const [k, v] of Object.entries(d.features)) {
-            const isBool = BOOL_FEATS.includes(k);
-            let valHtml;
-            if (isBool) {
-                valHtml = v === 1 ? '<span class="vbadge sim">Sim</span>' : '<span class="vbadge nao">Não</span>';
-            } else if (typeof v === 'number' && v % 1 !== 0) {
-                valHtml = `<span class="vbadge num">${v.toFixed(4)}</span>`;
-            } else {
-                valHtml = `<span class="vbadge num">${v}</span>`;
-            }
-            tf.innerHTML += `<tr><td class="feat-name">${LABELS[k] || k}</td><td>${valHtml}</td></tr>`;
+        const isMal=d.predicao===1;
+        const badge=document.getElementById('badge');
+        badge.textContent=d.label; badge.className='badge '+(isMal?'mal':'ben');
+        document.getElementById('url-disp').textContent=d.url;
+        document.getElementById('bm').style.width=d.prob_maligno+'%';
+        document.getElementById('bb').style.width=d.prob_benigno+'%';
+        document.getElementById('vm').textContent=d.prob_maligno+'%';
+        document.getElementById('vb').textContent=d.prob_benigno+'%';
+        const tf=document.getElementById('tb-features'); tf.innerHTML='';
+        for(const[k,v]of Object.entries(d.features)){
+            const isBool=BOOL_FEATS.includes(k);
+            let valHtml=isBool?(v===1?'<span class="vbadge sim">Sim</span>':'<span class="vbadge nao">Não</span>')
+                :(typeof v==='number'&&v%1!==0?`<span class="vbadge num">${v.toFixed(4)}</span>`:`<span class="vbadge num">${v}</span>`);
+            tf.innerHTML+=`<tr><td class="feat-name">${LABELS[k]||k}</td><td>${valHtml}</td></tr>`;
         }
-
-        const ti = document.getElementById('tb-imp');
-        ti.innerHTML = '';
-        for (const f of d.top5) {
-            const w = Math.round(f.importancia / 22 * 100);
-            ti.innerHTML += `<tr>
-                <td class="feat-name">${f.descricao}</td>
-                <td><div class="imp-wrap">
-                    <div class="imp-bg"><div class="imp-fill" style="width:${w}%"></div></div>
-                    <span class="imp-val">${f.importancia}%</span>
-                </div></td>
-            </tr>`;
+        const ti=document.getElementById('tb-imp'); ti.innerHTML='';
+        for(const f of d.top5){
+            const w=Math.round(f.importancia/22*100);
+            ti.innerHTML+=`<tr><td class="feat-name">${f.descricao}</td><td><div class="imp-wrap"><div class="imp-bg"><div class="imp-fill" style="width:${w}%"></div></div><span class="imp-val">${f.importancia}%</span></div></td></tr>`;
         }
-
-        document.getElementById('resultado').style.display = 'block';
-        document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('resultado').style.display='block';
+        document.getElementById('resultado').scrollIntoView({behavior:'smooth'});
     }
-
-    // ── MONITOR EM TEMPO REAL (SSE) ──────────────────────────────
-    let _totalMonitor  = 0;
-    let _benignMonitor = 0;
-    let _malicMonitor  = 0;
-    let _alertasMonitor = [];
-
-    function definirEstado(estado) {
-        const dot   = document.getElementById('estado-dot');
-        const texto = document.getElementById('estado-texto');
-        dot.className = 'estado-dot ' + estado;
-        if (estado === 'ligado')    texto.textContent = 'Monitor ativo';
-        if (estado === 'desligado') texto.textContent = 'Monitor desligado';
-        if (estado === 'aguardar')  texto.textContent = 'A ligar...';
-    }
-
-    function atualizarContadores() {
-        document.getElementById('mc-total').textContent  = _totalMonitor;
-        document.getElementById('mc-benign').textContent = _benignMonitor;
-        document.getElementById('mc-malic').textContent  = _malicMonitor;
-    }
-
-    function adicionarAlertaMonitor(alerta) {
-        // Evitar duplicados
-        if (_alertasMonitor.some(a => a.url === alerta.url)) return;
-        _alertasMonitor.push(alerta);
-
-        _totalMonitor++;
-        _malicMonitor++;
-        atualizarContadores();
-
-        document.getElementById('monitor-vazio').style.display = 'none';
-        const lista = document.getElementById('lista-alertas');
-        lista.style.display = 'block';
-
-        const li = document.createElement('li');
-        li.className = 'alerta-item';
-
-        const prob = document.createElement('span');
-        prob.className = 'alerta-prob';
-        prob.textContent = Math.round(alerta.prob_maligno) + '%';
-
-        const info = document.createElement('div');
-        info.className = 'alerta-info';
-
-        const urlEl = document.createElement('div');
-        urlEl.className = 'alerta-url';
-        urlEl.textContent = alerta.url;
-
-        const hora = document.createElement('div');
-        hora.className = 'alerta-hora';
-        hora.textContent = alerta.timestamp;
-
-        info.appendChild(urlEl);
-        info.appendChild(hora);
-
-        const btn = document.createElement('button');
-        btn.className = 'btn-benigno-app';
-        btn.textContent = '✓ Benigno';
-        btn.title = 'Marcar como benigno para melhorar o modelo';
-        btn.onclick = function() {
-            btn.disabled = true;
-            btn.textContent = '...';
-            fetch('/guardar_feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: alerta.url, label: 'BENIGNO' })
-            })
-            .then(r => r.json())
-            .then(() => { btn.textContent = '✓ Guardado'; btn.classList.add('confirm'); })
-            .catch(() => { btn.disabled = false; btn.textContent = '✓ Benigno'; });
-        };
-
-        li.appendChild(prob);
-        li.appendChild(info);
-        li.appendChild(btn);
-
-        // Inserir no topo da lista
-        lista.insertBefore(li, lista.firstChild);
-    }
-
-    function limparAlertas() {
-        _alertasMonitor = [];
-        _totalMonitor = _benignMonitor = _malicMonitor = 0;
-        atualizarContadores();
-        document.getElementById('lista-alertas').innerHTML = '';
-        document.getElementById('lista-alertas').style.display = 'none';
-        document.getElementById('monitor-vazio').style.display = 'block';
-    }
-
-    function iniciarSSE() {
-        definirEstado('aguardar');
-        const source = new EventSource('/alertas/stream');
-
-        source.onmessage = function(evento) {
-            try {
-                const dados = JSON.parse(evento.data);
-                if (dados.tipo === 'ligado') {
-                    definirEstado('ligado');
-                    return;
-                }
-                if (dados.tipo === 'heartbeat') return;
-                if (dados.tipo !== 'alerta') return;
-                adicionarAlertaMonitor(dados);
-            } catch { /* ignorar */ }
-        };
-
-        source.onerror = function() {
-            definirEstado('desligado');
-            source.close();
-            // Tentar reconectar em 10 segundos
-            setTimeout(() => { iniciarSSE(); }, 10000);
-        };
-    }
-
-    // Arrancar SSE quando a página carrega
-    iniciarSSE();
 </script>
 </body>
 </html>
