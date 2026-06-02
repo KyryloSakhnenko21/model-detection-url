@@ -274,5 +274,11 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-02T23:01:29.770796"
+  },
+  {
+    "url": "https://login.cp.pt/realms/cpclients/protocol/openid-connect/auth?utm_campaign=Greve%20-%203%20junho%20-%20servicos%20minimos&utm_medium=email&utm_source=Eloqua&client_id=websitecp&redirect_uri=https%3A%2F%2Fcp.pt%2Fpt%2Flogin-check&state=fc6fcf57-b7a6-439f-9993-0bb03720594c&response_mode=fragment&response_type=code&scope=openid&nonce=70de7c74-258a-446f-bd6c-6a3d51cc9a3c&ui_locales=pt&code_challenge=H4XK0dy478YlJ4IkMaYF-W_4s_CWtnrSThW5G-EJFvw&code_challenge_method=S256&elqTrackId=ed87eda58d644bf4a7bdc05ff2342f34&elq=4002d6c1d6d94c81b66b90ba3e868544&elqaid=591&elqat=1&elqCampaignId=434&elqak=8AF5BEDC2BBC1478376317F5EF482D391BDD0D1ED4AB6B93BA154B9A36E9AF08426B",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-02T23:02:48.529192"
   }
 ]
