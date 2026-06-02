@@ -358,5 +358,11 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-02T23:06:19.128896"
+  },
+  {
+    "url": "https://login.live.com/oauth20_authorize.srf?client_id=9199bf20-a13f-4107-85dc-02114787ef48&scope=https%3a%2f%2foutlook.office.com%2f.default+openid+profile+offline_access&redirect_uri=https%3a%2f%2foutlook.live.com%2fmail%2f&response_type=code&state=eyJpZCI6IjAxOWU4YTVlLWFkYzEtN2U2My1hYjkwLTc2ZmI1NThhY2RkYiIsIm1ldGEiOnsiaW50ZXJhY3Rpb25UeXBlIjoicmVkaXJlY3QifX0%3d%7caHR0cHM6Ly9vdXRsb29rLmxpdmUuY29tL21haWwvP2RlZXBsaW5rPW1haWwlMkY&response_mode=fragment&nonce=019e8a5e-adc1-736e-a7b6-7d420cdb5a1a&code_challenge=ZN6wKY4EPXaaNKm7m1U4j5dk69Na9P3ASD8jVFnCJTA&code_challenge_method=S256&x-client-SKU=msal.js.browser&x-client-Ver=5.8.0&uaid=5e86076b971d68593c633832f2458398&msproxy=1&issuer=mso&tenant=common&ui_locales=pt-PT&client_info=1&signup=1&lw=1&fl=dob%2cflname%2cwld&epctrc=uG17LXaNHOGfpmXCFcFco%2bah3GLSlyd0JoYffFXSrbw%3d5%3a1%3aCANARY%3ayVMnF4oy6Z6hbfKFWkI1zddmL4289CN2ZVJdCnnOnHQ%3d&epct=PAQABDgEAAAAdDD7nC9b5Q7JPd_okEQRFRXZvU3RzQXJ0aWZhY3RzCAAAAAAA3kIEh8GImliMGdP5tb58UUIIO0hfLnY8ukqo2io-RMbCgvRFDO2FY2amMf4OVqY3bfMsz10aY61IBwFRBeyRhy1DiTbNTWQD74GfcPoVaROnit4TY32aUFtaLxtdNTqQN7Y104p83gGGjbARHQLd9GmXhBwejbuzQvvVRxmN0uur9-CFCMk1xVrqsPuRLIg18DCCG2OLrp8akCthp410-iAA&jshs=0&cobrandid=ab0455a0-8d03-46b9-b18b-df2f57b9e44c&clidata=1&claims=%7b%22access_token%22%3a%7b%22xms_cc%22%3a%7b%22values%22%3a%5b%22CP1%22%5d%7d%7d%7d",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-02T23:06:20.174899"
   }
 ]
