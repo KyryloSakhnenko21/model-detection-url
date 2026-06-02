@@ -23,12 +23,14 @@ const elTimestamp       = document.getElementById('timestamp');
 const elToast           = document.getElementById('toast');
 
 // Painel de alertas de rede (SSE)
-const elPainelRede      = document.getElementById('painel-rede');
-const elListaRede       = document.getElementById('lista-rede');
-const elContadorRede    = document.getElementById('contador-rede');
-const elBtnLimparRede   = document.getElementById('btn-limpar-rede');
+const elPainelRede    = document.getElementById('painel-rede');
+const elListaRede     = document.getElementById('lista-rede');
+const elContadorRede  = document.getElementById('contador-rede');
+const elBtnLimparRede = document.getElementById('btn-limpar-rede');
 
-// Contador de alertas de rede nesta sessão do popup
+// Badge de modo email
+const elModoEmail = document.getElementById('modo-email');
+
 let alertasRede = [];
 
 // ─────────────────────────────────────────────
@@ -40,6 +42,19 @@ function mostrarToast(msg, cor = '#22c55e') {
   elToast.style.color = cor;
   elToast.style.display = 'block';
   setTimeout(() => { elToast.style.display = 'none'; }, 2500);
+}
+
+// ─────────────────────────────────────────────
+// BADGE MODO EMAIL
+// ─────────────────────────────────────────────
+function mostrarModoEmail(plataforma) {
+  if (!elModoEmail) return;
+  if (plataforma) {
+    elModoEmail.textContent = `📧 Modo email — ${plataforma}`;
+    elModoEmail.style.display = 'inline-block';
+  } else {
+    elModoEmail.style.display = 'none';
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -55,13 +70,8 @@ async function verificarFlask() {
 }
 
 function mostrarEstadoFlask(online) {
-  if (online) {
-    elDotFlask.className = 'dot online';
-    elTextoFlask.textContent = 'online';
-  } else {
-    elDotFlask.className = 'dot offline';
-    elTextoFlask.textContent = 'offline';
-  }
+  elDotFlask.className  = online ? 'dot online' : 'dot offline';
+  elTextoFlask.textContent = online ? 'online' : 'offline';
 }
 
 // ─────────────────────────────────────────────
@@ -70,7 +80,6 @@ function mostrarEstadoFlask(online) {
 async function marcarComoBenigno(url, btn) {
   btn.disabled = true;
   btn.textContent = '...';
-
   chrome.runtime.sendMessage({ tipo: 'GUARDAR_FEEDBACK', url, label: 'BENIGNO' }, resposta => {
     if (chrome.runtime.lastError || !resposta || !resposta.ok) {
       btn.disabled = false;
@@ -89,43 +98,37 @@ async function marcarComoBenigno(url, btn) {
 // ─────────────────────────────────────────────
 function renderizarAlertasRede() {
   if (!elPainelRede || !elListaRede) return;
-
-  if (alertasRede.length === 0) {
-    elPainelRede.style.display = 'none';
-    return;
-  }
+  if (alertasRede.length === 0) { elPainelRede.style.display = 'none'; return; }
 
   elPainelRede.style.display = 'block';
   if (elContadorRede) elContadorRede.textContent = alertasRede.length;
 
   elListaRede.innerHTML = '';
-  // Mostrar os 5 mais recentes (ordem inversa)
-  const recentes = [...alertasRede].reverse().slice(0, 5);
-  recentes.forEach(alerta => {
-    const li = document.createElement('li');
+  [...alertasRede].reverse().slice(0, 5).forEach(alerta => {
+    const li  = document.createElement('li');
     li.className = 'alerta-rede-item';
 
     const badge = document.createElement('span');
-    badge.className = 'prob-badge';
+    badge.className   = 'prob-badge';
     badge.textContent = Math.round(alerta.prob_maligno) + '%';
 
     const info = document.createElement('div');
     info.className = 'alerta-rede-info';
 
-    const urlCurto = alerta.url.length > 40 ? alerta.url.slice(0, 37) + '...' : alerta.url;
-    const textoUrl = document.createElement('span');
-    textoUrl.className = 'link-texto';
+    const urlCurto  = alerta.url.length > 40 ? alerta.url.slice(0, 37) + '...' : alerta.url;
+    const textoUrl  = document.createElement('span');
+    textoUrl.className   = 'link-texto';
     textoUrl.textContent = urlCurto;
-    textoUrl.title = alerta.url;
+    textoUrl.title       = alerta.url;
 
-    const textoHora = document.createElement('span');
-    textoHora.className = 'alerta-rede-hora';
+    const textoHora  = document.createElement('span');
+    textoHora.className   = 'alerta-rede-hora';
     textoHora.textContent = alerta.timestamp;
 
     const btn = document.createElement('button');
-    btn.className = 'btn-benigno';
+    btn.className   = 'btn-benigno';
     btn.textContent = '✓ Benigno';
-    btn.title = 'Marcar como benigno';
+    btn.title       = 'Marcar como benigno';
     btn.addEventListener('click', () => marcarComoBenigno(alerta.url, btn));
 
     info.appendChild(textoUrl);
@@ -136,21 +139,15 @@ function renderizarAlertasRede() {
     row.appendChild(badge);
     row.appendChild(info);
     row.appendChild(btn);
-
     li.appendChild(row);
     elListaRede.appendChild(li);
   });
 }
 
 function adicionarAlertaRede(alerta) {
-  // Evitar duplicados (mesmo URL na última 1 min)
-  const jaExiste = alertasRede.some(a => a.url === alerta.url);
-  if (jaExiste) return;
-
+  if (alertasRede.some(a => a.url === alerta.url)) return;
   alertasRede.push(alerta);
   renderizarAlertasRede();
-
-  // Piscar o painel para chamar a atenção
   if (elPainelRede) {
     elPainelRede.classList.add('novo-alerta');
     setTimeout(() => elPainelRede.classList.remove('novo-alerta'), 1000);
@@ -165,83 +162,107 @@ if (elBtnLimparRede) {
 }
 
 // ─────────────────────────────────────────────
-// ATUALIZAR INTERFACE — ANÁLISE DE PÁGINA
+// ATUALIZAR INTERFACE — ANÁLISE
 // ─────────────────────────────────────────────
 function mostrarResultados(dados) {
   elEstadoAnalisar.style.display = 'none';
   elEstadoSemFlask.style.display = 'none';
   elEstadoInicial.style.display  = 'none';
 
-  if (dados.total === 0) {
+  // Mostrar badge de modo email se aplicável
+  mostrarModoEmail(dados.modoEmail ? dados.plataformaEmail : null);
+
+  // Caso especial: plataforma de email mas nenhum email aberto
+  if (dados.modoEmail && dados.semEmailAberto) {
+    elEstadoInicial.textContent  = '📧 Abre um email para analisar os seus links.';
     elEstadoInicial.style.display = 'block';
-    elResultados.style.display = 'none';
+    elResultados.style.display    = 'none';
+    return;
+  }
+
+  if (dados.total === 0) {
+    elEstadoInicial.textContent  = dados.modoEmail
+      ? '📧 Nenhum link encontrado neste email.'
+      : 'Nenhum link encontrado nesta página.';
+    elEstadoInicial.style.display = 'block';
+    elResultados.style.display    = 'none';
     return;
   }
 
   elResultados.style.display = 'block';
-  elValTotal.textContent   = dados.total;
-  elValBenigno.textContent = dados.benignos;
-  elValMaligno.textContent = dados.maliciosos;
+  elValTotal.textContent     = dados.total;
+  elValBenigno.textContent   = dados.benignos;
+  elValMaligno.textContent   = dados.maliciosos;
 
   const pctSeguro = dados.total > 0 ? Math.round((dados.benignos / dados.total) * 100) : 100;
-  elBarraFill.style.width = pctSeguro + '%';
+  elBarraFill.style.width    = pctSeguro + '%';
   elPctSeguranca.textContent = pctSeguro + '%';
   if (dados.maliciosos > 0) elBarraFill.classList.add('com-maligno');
   else elBarraFill.classList.remove('com-maligno');
 
   if (dados.maliciosos > 0) {
     elAlertaMaligno.style.display = 'block';
-    elTudoOk.style.display = 'none';
-    elListaMaligno.innerHTML = '';
+    elTudoOk.style.display        = 'none';
+    elListaMaligno.innerHTML      = '';
 
-    const linksMaliciosos = dados.links
+    dados.links
       .filter(l => l.label === 'MALICIOSO')
-      .sort((a, b) => b.prob_maligno - a.prob_maligno);
+      .sort((a, b) => b.prob_maligno - a.prob_maligno)
+      .forEach(link => {
+        const li      = document.createElement('li');
+        const prob    = Math.round(link.prob_maligno * 100);
+        const urlCurto = link.url.length > 45 ? link.url.slice(0, 42) + '...' : link.url;
+        const row     = document.createElement('div');
+        row.className = 'link-row';
 
-    linksMaliciosos.forEach(link => {
-      const li = document.createElement('li');
-      const prob = Math.round(link.prob_maligno * 100);
-      const urlCurto = link.url.length > 45 ? link.url.slice(0, 42) + '...' : link.url;
+        const badge = document.createElement('span');
+        badge.className   = 'prob-badge';
+        badge.textContent = prob + '%';
 
-      const row = document.createElement('div');
-      row.className = 'link-row';
+        const texto = document.createElement('span');
+        texto.className   = 'link-texto';
+        texto.textContent = urlCurto;
+        texto.title       = link.url;
 
-      const badge = document.createElement('span');
-      badge.className = 'prob-badge';
-      badge.textContent = prob + '%';
+        const btn = document.createElement('button');
+        btn.className   = 'btn-benigno';
+        btn.textContent = '✓ Benigno';
+        btn.title       = 'Marcar como benigno para melhorar o modelo';
+        btn.addEventListener('click', () => marcarComoBenigno(link.url, btn));
 
-      const texto = document.createElement('span');
-      texto.className = 'link-texto';
-      texto.textContent = urlCurto;
-      texto.title = link.url;
-
-      const btn = document.createElement('button');
-      btn.className = 'btn-benigno';
-      btn.textContent = '✓ Benigno';
-      btn.title = 'Marcar como benigno para melhorar o modelo';
-      btn.addEventListener('click', () => marcarComoBenigno(link.url, btn));
-
-      row.appendChild(badge);
-      row.appendChild(texto);
-      row.appendChild(btn);
-      li.appendChild(row);
-      elListaMaligno.appendChild(li);
-    });
+        row.appendChild(badge);
+        row.appendChild(texto);
+        row.appendChild(btn);
+        li.appendChild(row);
+        elListaMaligno.appendChild(li);
+      });
   } else {
     elAlertaMaligno.style.display = 'none';
-    elTudoOk.style.display = 'block';
+    elTudoOk.style.display        = 'block';
   }
 
   const agora = new Date();
-  elTimestamp.textContent = agora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  elTimestamp.textContent = agora.toLocaleTimeString('pt-PT', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
 }
 
-function mostrarAnalisar() {
+function mostrarAnalisar(modoEmail = false, plataforma = null) {
   elEstadoAnalisar.style.display = 'block';
   elEstadoSemFlask.style.display = 'none';
   elEstadoInicial.style.display  = 'none';
   elResultados.style.display     = 'none';
-  elBtnReanalisar.disabled = true;
+  elBtnReanalisar.disabled       = true;
+
+  mostrarModoEmail(modoEmail ? plataforma : null);
+
+  // Texto de loading adaptado ao modo
+  const elSpinnerTexto = elEstadoAnalisar.querySelector('div:last-child');
+  if (elSpinnerTexto) {
+    elSpinnerTexto.textContent = modoEmail
+      ? `A analisar email aberto (${plataforma})...`
+      : 'A analisar links da página...';
+  }
 }
 
 function mostrarSemFlask() {
@@ -249,7 +270,8 @@ function mostrarSemFlask() {
   elEstadoSemFlask.style.display = 'block';
   elEstadoInicial.style.display  = 'none';
   elResultados.style.display     = 'none';
-  elBtnReanalisar.disabled = false;
+  elBtnReanalisar.disabled       = false;
+  mostrarModoEmail(null);
 }
 
 // ─────────────────────────────────────────────
@@ -284,7 +306,7 @@ async function pedirReanalisarAoContentScript() {
 // ─────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((mensagem) => {
   if (mensagem.tipo === 'ANALISE_INICIO') {
-    mostrarAnalisar();
+    mostrarAnalisar(mensagem.modoEmail, mensagem.plataformaEmail);
   } else if (mensagem.tipo === 'ANALISE_PROGRESSO') {
     mostrarResultados(mensagem.dados);
     elBtnReanalisar.disabled = true;
@@ -292,7 +314,6 @@ chrome.runtime.onMessage.addListener((mensagem) => {
     mostrarResultados(mensagem.dados);
     elBtnReanalisar.disabled = false;
   } else if (mensagem.tipo === 'ALERTA_REDE_POPUP') {
-    // Alerta vindo do monitor de rede (via content.js → SSE)
     adicionarAlertaRede(mensagem.alerta);
   }
 });
@@ -303,17 +324,22 @@ chrome.runtime.onMessage.addListener((mensagem) => {
 elBtnReanalisar.addEventListener('click', async () => {
   const flaskOk = await verificarFlask();
   if (!flaskOk) { mostrarEstadoFlask(false); mostrarSemFlask(); return; }
-  mostrarAnalisar();
+  const estado = await pedirEstadoAoContentScript();
+  mostrarAnalisar(estado?.modoEmail, estado?.plataformaEmail);
   await pedirReanalisarAoContentScript();
 });
 
 elBtnRetry.addEventListener('click', async (e) => {
   e.preventDefault();
-  elDotFlask.className = 'dot loading';
+  elDotFlask.className     = 'dot loading';
   elTextoFlask.textContent = 'a verificar...';
   const flaskOk = await verificarFlask();
   mostrarEstadoFlask(flaskOk);
-  if (flaskOk) { mostrarAnalisar(); await pedirReanalisarAoContentScript(); }
+  if (flaskOk) {
+    const estado = await pedirEstadoAoContentScript();
+    mostrarAnalisar(estado?.modoEmail, estado?.plataformaEmail);
+    await pedirReanalisarAoContentScript();
+  }
 });
 
 elBtnAbrirApp.addEventListener('click', () => {
@@ -330,10 +356,13 @@ async function inicializar() {
 
   const estado = await pedirEstadoAoContentScript();
   if (!estado) { mostrarAnalisar(); return; }
-  if (estado.emProgresso) mostrarAnalisar();
-  else mostrarResultados(estado);
 
-  // Esconder painel de rede inicialmente (só aparece quando chegar alerta)
+  if (estado.emProgresso) {
+    mostrarAnalisar(estado.modoEmail, estado.plataformaEmail);
+  } else {
+    mostrarResultados(estado);
+  }
+
   if (elPainelRede) elPainelRede.style.display = 'none';
 }
 

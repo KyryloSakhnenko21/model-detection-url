@@ -5,34 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Shield — Monitor em Tempo Real</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+       * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1117; color: #c8cdd8; min-height: 100vh; }
+
+        /* ── NAVEGAÇÃO ── */
         nav { background: #0a1535; padding: 0 40px; display: flex; align-items: center; gap: 0; }
         .nav-brand { color: white; font-weight: 700; font-size: 0.95rem; padding: 14px 20px 14px 0; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 10px; white-space: nowrap; }
         .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; padding: 14px 16px; transition: all 0.2s; border-bottom: 3px solid transparent; }
         .nav-link:hover { color: white; }
-        .nav-link.ativo { color: white; border-bottom-color: #e53935; }
-        header { background: linear-gradient(135deg, #7b1a1a 0%, #c62828 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
-        header h1 { font-size: 1.7rem; font-weight: 700; }
-        header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
-        main { max-width: 920px; margin: 36px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .nav-link.ativo { color: white; border-bottom-color: #1565c0; }
+
+        header { background: #161b27; border-bottom: 1px solid #2a2f3e; color: white; padding: 22px 40px; }
+        header h1 { font-size: 1.5rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+        header p  { font-size: 0.85rem; color: #6b7a99; margin-top: 4px; }
+
+        main { max-width: 920px; margin: 32px auto; padding: 0 20px; }
+
+        .card { background: #0a1535; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
         .card-titulo { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+
         .estado-row { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #888; }
         .estado-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
         .estado-dot.ligado    { background: #43a047; box-shadow: 0 0 6px #43a04788; animation: pulsar 2s infinite; }
         .estado-dot.desligado { background: #e53935; }
         .estado-dot.aguardar  { background: #f59e0b; animation: pulsar 1s infinite; }
+
         @keyframes pulsar { 0%,100%{opacity:1}50%{opacity:0.35} }
         .contadores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 0; }
-        .contador { background: #f5f7fa; border-radius: 10px; padding: 18px; text-align: center; }
+        .contador { background: #0a1535; border-radius: 10px; padding: 18px; text-align: center; }
         .contador .val { font-size: 2.2rem; font-weight: 700; line-height: 1; font-family: 'Courier New', monospace; }
         .contador .rot { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
-        .contador.c-total  .val { color: #1565c0; }
+        .contador.c-total  .val { color: white; }
         .contador.c-benign .val { color: #2e7d32; }
         .contador.c-malic  .val { color: #c62828; }
+
         .btn-limpar { background: none; border: 1px solid #e0e0e0; border-radius: 6px; color: #aaa; font-size: 0.78rem; padding: 5px 12px; cursor: pointer; transition: all 0.2s; }
         .btn-limpar:hover { border-color: #e53935; color: #e53935; }
+
         #lista-alertas { list-style: none; max-height: 480px; overflow-y: auto; }
         #lista-alertas::-webkit-scrollbar { width: 4px; }
         #lista-alertas::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
@@ -46,7 +55,9 @@
         .btn-benigno:hover { background:#c8e6c9; }
         .btn-benigno:disabled { opacity:0.45; cursor:not-allowed; }
         .btn-benigno.confirm { opacity:0.6; cursor:default; }
+
         #monitor-vazio { text-align:center; padding:36px 0; color:#bbb; font-size:0.9rem; }
+
         footer { text-align:center; color:#aaa; font-size:0.78rem; padding:20px; }
     </style>
 </head>

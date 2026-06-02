@@ -6,7 +6,7 @@
     <title>URL Shield — Analisar URL</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1117; color: #c8cdd8; min-height: 100vh; }
 
         /* ── NAVEGAÇÃO ── */
         nav { background: #0a1535; padding: 0 40px; display: flex; align-items: center; gap: 0; }
@@ -15,70 +15,85 @@
         .nav-link:hover { color: white; }
         .nav-link.ativo { color: white; border-bottom-color: #1565c0; }
 
-        header { background: linear-gradient(135deg, #0d1b4b 0%, #1565c0 100%); color: white; padding: 28px 40px; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
-        header h1 { font-size: 1.7rem; font-weight: 700; }
-        header p  { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
+        header { background: #161b27; border-bottom: 1px solid #2a2f3e; color: white; padding: 22px 40px; }
+        header h1 { font-size: 1.5rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+        header p  { font-size: 0.85rem; color: #6b7a99; margin-top: 4px; }
 
-        main { max-width: 920px; margin: 36px auto; padding: 0 20px; }
-        .card { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        main { max-width: 920px; margin: 32px auto; padding: 0 20px; }
 
-        .input-label { font-size: 0.82rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
-        .input-row { display: flex; gap: 12px; }
-        #url-input { flex: 1; padding: 14px 18px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s; font-family: 'Courier New', monospace; }
-        #url-input:focus { border-color: #1565c0; }
-        #url-input.error { border-color: #e53935; }
-        #btn { padding: 14px 28px; background: #1565c0; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
-        #btn:hover { background: #0d47a1; }
-        #btn:disabled { background: #90a4ae; cursor: not-allowed; }
+        .card { background: #0a1535; border: 1px solid #2a2f3e; border-radius: 12px; padding: 24px 28px; margin-bottom: 20px; }
 
-        .exemplos { margin-top: 10px; font-size: 0.82rem; color: #888; }
-        .exemplos span { cursor: pointer; color: #1565c0; text-decoration: underline; margin-right: 10px; }
+        .input-label { font-size: 0.75rem; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; }
+        .input-row { display: flex; gap: 10px; }
+        #url-input {
+            flex: 1; padding: 12px 16px;
+            background: #0e1117; border: 1px solid #2a2f3e; border-radius: 8px;
+            color: #c8cdd8; font-size: 0.95rem; outline: none;
+            transition: border-color 0.2s; font-family: 'Courier New', monospace;
+        }
+        #url-input:focus { border-color: #3a6ff7; }
+        #url-input.error { border-color: #e05252; }
+        #url-input::placeholder { color: #3a4060; }
 
-        #loading { display: none; text-align: center; padding: 18px; color: #888; }
-        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #e0e0e0; border-top-color: #1565c0; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+        #btn { padding: 12px 24px; background: #3a6ff7; color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        #btn:hover { background: #2a5cd4; }
+        #btn:disabled { background: #1e2436; color: #4a5070; cursor: not-allowed; }
+
+        .exemplos { margin-top: 10px; font-size: 0.8rem; color: #6b7a99; }
+        .exemplos span { cursor: pointer; color: #3a6ff7; text-decoration: underline; margin-right: 10px; }
+        .exemplos span:hover { color: #7aaeff; }
+
+        #loading { display: none; text-align: center; padding: 18px; color: #6b7a99; }
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #2a2f3e; border-top-color: #3a6ff7; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #resultado { display: none; }
-        .res-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid #f0f0f0; }
-        .badge { padding: 10px 26px; border-radius: 30px; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
-        .badge.mal { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
-        .badge.ben { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
-        .url-disp { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #555; word-break: break-all; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; flex: 1; }
 
-        .prob-title { font-size: 0.82rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-        .prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .prob-lbl { width: 90px; font-size: 0.88rem; font-weight: 600; text-align: right; }
-        .prob-lbl.m { color: #c62828; } .prob-lbl.b { color: #2e7d32; }
-        .prob-bg { flex: 1; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
-        .prob-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
-        .prob-fill.m { background: linear-gradient(90deg, #ef9a9a, #e53935); }
-        .prob-fill.b { background: linear-gradient(90deg, #a5d6a7, #43a047); }
-        .prob-val { width: 55px; font-size: 0.9rem; font-weight: 700; }
-        .prob-val.m { color: #c62828; } .prob-val.b { color: #2e7d32; }
+        .res-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #2a2f3e; }
+        .badge { padding: 8px 22px; border-radius: 30px; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+        .badge.mal { background: #2a1515; color: #e05252; border: 1px solid #5a2020; }
+        .badge.ben { background: #1a2e1a; color: #4caf88; border: 1px solid #2a5a3a; }
+        .url-disp { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #6b7a99; word-break: break-all; background: #0e1117; padding: 8px 12px; border-radius: 6px; border: 1px solid #2a2f3e; flex: 1; }
 
-        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .prob-title { font-size: 0.75rem; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .prob-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .prob-lbl { width: 85px; font-size: 0.85rem; font-weight: 600; text-align: right; }
+        .prob-lbl.m { color: #e05252; } .prob-lbl.b { color: #4caf88; }
+        .prob-bg { flex: 1; height: 18px; background: #0e1117; border-radius: 9px; overflow: hidden; border: 1px solid #2a2f3e; }
+        .prob-fill { height: 100%; border-radius: 9px; transition: width 0.6s ease; }
+        .prob-fill.m { background: #e05252; }
+        .prob-fill.b { background: #4caf88; }
+        .prob-val { width: 52px; font-size: 0.88rem; font-weight: 700; }
+        .prob-val.m { color: #e05252; } .prob-val.b { color: #4caf88; }
+
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         @media (max-width: 660px) { .grid2 { grid-template-columns: 1fr; } }
 
-        .sec-title { font-size: 0.82rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #1565c0; }
+        .sec-title { font-size: 0.75rem; font-weight: 700; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; background: #3a6ff7; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
-        th { background: #f5f7fa; color: #555; font-weight: 600; padding: 8px 10px; text-align: left; font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.4px; }
-        td { padding: 8px 10px; border-bottom: 1px solid #f5f5f5; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        th { background: #0e1117; color: #6b7a99; font-weight: 600; padding: 8px 10px; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #2a2f3e; }
+        td { padding: 8px 10px; border-bottom: 1px solid #1e2436; color: #c8cdd8; }
         tr:last-child td { border-bottom: none; }
-        .feat-name { font-size: 0.84rem; color: #333; }
-        .vbadge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; font-weight: 600; }
-        .vbadge.sim { background: #ffebee; color: #c62828; }
-        .vbadge.nao { background: #e8f5e9; color: #2e7d32; }
-        .vbadge.num { background: #f5f5f5; color: #333; }
-        .imp-wrap { display: flex; align-items: center; gap: 8px; }
-        .imp-bg { width: 80px; height: 8px; background: #e8eaf6; border-radius: 4px; overflow: hidden; }
-        .imp-fill { height: 100%; background: #1565c0; border-radius: 4px; }
-        .imp-val { font-size: 0.82rem; color: #888; }
 
-        #erro { display: none; background: #ffebee; color: #c62828; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; margin-top: 10px; border: 1px solid #ef9a9a; }
-        footer { text-align: center; color: #aaa; font-size: 0.78rem; padding: 20px; }
+        .feat-name { font-size: 0.82rem; color: #9aa0b8; }
+        .vbadge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .vbadge.sim { background: #2a1515; color: #e05252; }
+        .vbadge.nao { background: #1a2e1a; color: #4caf88; }
+        .vbadge.num { background: #1e2436; color: #9aa0b8; }
+
+        .imp-wrap { display: flex; align-items: center; gap: 8px; }
+        .imp-bg { width: 80px; height: 7px; background: #0e1117; border-radius: 4px; overflow: hidden; border: 1px solid #2a2f3e; }
+        .imp-fill { height: 100%; background: #3a6ff7; border-radius: 4px; }
+        .imp-val { font-size: 0.8rem; color: #6b7a99; }
+
+        #erro { display: none; background: #2a1515; color: #e05252; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; margin-top: 10px; border: 1px solid #5a2020; }
+
+        footer { text-align: center; color: #3a4060; font-size: 0.76rem; padding: 24px; border-top: 1px solid #2a2f3e; margin-top: 20px; }
     </style>
+
+
 </head>
 <body>
 <nav>

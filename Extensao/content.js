@@ -3,17 +3,62 @@
 // Corre em cada página automaticamente.
 // NÃO faz fetch diretamente — envia mensagens ao background.js
 // O SSE foi movido para o background.js (sem restrições CSP).
+// Suporte a modo email: Gmail e Outlook Web.
 // ============================================================
 
 let estadoAnalise = {
-  total: 0, maliciosos: 0, benignos: 0, links: [], emProgresso: false
+  total: 0, maliciosos: 0, benignos: 0, links: [], emProgresso: false,
+  modoEmail: false, plataformaEmail: null
 };
 
 // ─────────────────────────────────────────────
-// EXTRAÇÃO E ANÁLISE DE LINKS DA PÁGINA
+// DETEÇÃO DE PLATAFORMA DE EMAIL
 // ─────────────────────────────────────────────
-function extrairLinks() {
-  const anchors = document.querySelectorAll('a[href]');
+const PLATAFORMAS_EMAIL = {
+  gmail: {
+    nome: 'Gmail',
+    dominios: ['mail.google.com'],
+    // Seletores do corpo do email aberto (por ordem de preferência)
+    seletoresEmail: [
+      'div.a3s.aiL',      // corpo principal do email
+      'div.a3s',          // alternativa
+      'div[data-message-id] div.ii.gt', // email em thread
+    ],
+    // Seletor que indica que um email está aberto (não apenas a caixa de entrada)
+    seletorAberto: 'div.adn.ads',
+  },
+  // Nota: o Outlook Web foi removido por limitação técnica.
+  // As classes CSS do Outlook são geradas dinamicamente e mudam entre sessões,
+  // tornando impossível identificar o corpo do email com seletores estáveis.
+};
+
+function detetarPlataformaEmail() {
+  const hostname = window.location.hostname;
+  for (const [chave, config] of Object.entries(PLATAFORMAS_EMAIL)) {
+    if (config.dominios.some(d => hostname.includes(d))) {
+      return { chave, ...config };
+    }
+  }
+  return null;
+}
+
+function encontrarCorpoEmail(plataforma) {
+  for (const seletor of plataforma.seletoresEmail) {
+    const el = document.querySelector(seletor);
+    if (el) return el;
+  }
+  return null;
+}
+
+function emailEstaAberto(plataforma) {
+  return !!document.querySelector(plataforma.seletorAberto);
+}
+
+// ─────────────────────────────────────────────
+// EXTRAÇÃO DE LINKS
+// ─────────────────────────────────────────────
+function extrairLinks(contexto = document) {
+  const anchors = contexto.querySelectorAll('a[href]');
   const vistos = new Set();
   const links = [];
   anchors.forEach(a => {
@@ -26,6 +71,9 @@ function extrairLinks() {
   return links;
 }
 
+// ─────────────────────────────────────────────
+// CLASSIFICAÇÃO E DESTAQUE
+// ─────────────────────────────────────────────
 function classificarURL(url) {
   return new Promise(resolve => {
     chrome.runtime.sendMessage({ tipo: 'CLASSIFICAR_URL', url }, resposta => {
@@ -62,14 +110,41 @@ function limparDestaquesAnteriores() {
   });
 }
 
-async function analisarPagina() {
+// ─────────────────────────────────────────────
+// ANÁLISE — MODO EMAIL
+// ─────────────────────────────────────────────
+async function analisarEmail(plataforma) {
   if (estadoAnalise.emProgresso) return;
-  estadoAnalise.emProgresso = true;
-  limparDestaquesAnteriores();
-  estadoAnalise = { total: 0, maliciosos: 0, benignos: 0, links: [], emProgresso: true };
-  chrome.runtime.sendMessage({ tipo: 'ANALISE_INICIO' }).catch(() => {});
 
-  const links = extrairLinks();
+  // Verificar se há email aberto
+  if (!emailEstaAberto(plataforma)) {
+    estadoAnalise = {
+      total: 0, maliciosos: 0, benignos: 0, links: [],
+      emProgresso: false, modoEmail: true,
+      plataformaEmail: plataforma.nome, semEmailAberto: true
+    };
+    chrome.runtime.sendMessage({
+      tipo: 'ANALISE_COMPLETA', dados: estadoAnalise
+    }).catch(() => {});
+    return;
+  }
+
+  const corpo = encontrarCorpoEmail(plataforma);
+  if (!corpo) {
+    // Email aberto mas corpo não encontrado — tentar modo normal como fallback
+    await analisarPaginaNormal();
+    return;
+  }
+
+  estadoAnalise = {
+    total: 0, maliciosos: 0, benignos: 0, links: [],
+    emProgresso: true, modoEmail: true,
+    plataformaEmail: plataforma.nome, semEmailAberto: false
+  };
+  limparDestaquesAnteriores();
+  chrome.runtime.sendMessage({ tipo: 'ANALISE_INICIO', modoEmail: true, plataformaEmail: plataforma.nome }).catch(() => {});
+
+  const links = extrairLinks(corpo);
   estadoAnalise.total = links.length;
 
   if (links.length === 0) {
@@ -96,6 +171,85 @@ async function analisarPagina() {
   estadoAnalise.emProgresso = false;
   chrome.runtime.sendMessage({ tipo: 'ANALISE_COMPLETA', dados: estadoAnalise }).catch(() => {});
   chrome.storage.local.set({ ultimaAnalise: estadoAnalise });
+}
+
+// ─────────────────────────────────────────────
+// ANÁLISE — MODO NORMAL (páginas comuns)
+// ─────────────────────────────────────────────
+async function analisarPaginaNormal() {
+  if (estadoAnalise.emProgresso) return;
+  estadoAnalise = {
+    total: 0, maliciosos: 0, benignos: 0, links: [],
+    emProgresso: true, modoEmail: false, plataformaEmail: null
+  };
+  limparDestaquesAnteriores();
+  chrome.runtime.sendMessage({ tipo: 'ANALISE_INICIO', modoEmail: false }).catch(() => {});
+
+  const links = extrairLinks(document);
+  estadoAnalise.total = links.length;
+
+  if (links.length === 0) {
+    estadoAnalise.emProgresso = false;
+    chrome.runtime.sendMessage({ tipo: 'ANALISE_COMPLETA', dados: estadoAnalise }).catch(() => {});
+    return;
+  }
+
+  const TAMANHO_LOTE = 5;
+  for (let i = 0; i < links.length; i += TAMANHO_LOTE) {
+    const lote = links.slice(i, i + TAMANHO_LOTE);
+    await Promise.all(lote.map(async ({ url, element }) => {
+      const resultado = await classificarURL(url);
+      if (!resultado) return;
+      const eMalicioso = resultado.label === 'MALICIOSO';
+      const probDecimal = resultado.prob_maligno / 100;
+      if (eMalicioso) { estadoAnalise.maliciosos++; destacarLink(element, probDecimal); }
+      else { estadoAnalise.benignos++; }
+      estadoAnalise.links.push({ url, label: resultado.label, prob_maligno: probDecimal });
+      chrome.runtime.sendMessage({ tipo: 'ANALISE_PROGRESSO', dados: { ...estadoAnalise } }).catch(() => {});
+    }));
+  }
+
+  estadoAnalise.emProgresso = false;
+  chrome.runtime.sendMessage({ tipo: 'ANALISE_COMPLETA', dados: estadoAnalise }).catch(() => {});
+  chrome.storage.local.set({ ultimaAnalise: estadoAnalise });
+}
+
+// ─────────────────────────────────────────────
+// PONTO DE ENTRADA — decide o modo
+// ─────────────────────────────────────────────
+const _plataforma = detetarPlataformaEmail();
+
+async function analisarPagina() {
+  if (_plataforma) {
+    await analisarEmail(_plataforma);
+  } else {
+    await analisarPaginaNormal();
+  }
+}
+
+// ─────────────────────────────────────────────
+// OBSERVER — reanalisar ao abrir email diferente
+// Deteta mudanças no DOM que indicam que o utilizador
+// navegou para outro email dentro do Gmail / Outlook.
+// ─────────────────────────────────────────────
+let _observerTimeout = null;
+
+function iniciarObserverEmail() {
+  if (!_plataforma) return;
+
+  const observer = new MutationObserver(() => {
+    // Debounce — aguarda 800 ms de estabilidade antes de reanalisar
+    clearTimeout(_observerTimeout);
+    _observerTimeout = setTimeout(() => {
+      if (!estadoAnalise.emProgresso) {
+        analisarEmail(_plataforma);
+      }
+    }, 800);
+  });
+
+  // Observar mudanças na área principal da página
+  const alvo = document.body;
+  observer.observe(alvo, { childList: true, subtree: true });
 }
 
 // ─────────────────────────────────────────────
@@ -128,11 +282,9 @@ chrome.runtime.onMessage.addListener((mensagem, sender, sendResponse) => {
     analisarPagina();
     sendResponse({ ok: true });
   } else if (mensagem.tipo === 'ALERTA_REDE') {
-    // Veio do background.js — destacar links na página e notificar popup
     destacarLinkPorUrl(mensagem.alerta.url);
     chrome.runtime.sendMessage({
-      tipo  : 'ALERTA_REDE_POPUP',
-      alerta: mensagem.alerta
+      tipo: 'ALERTA_REDE_POPUP', alerta: mensagem.alerta
     }).catch(() => {});
   }
   return true;
@@ -141,4 +293,7 @@ chrome.runtime.onMessage.addListener((mensagem, sender, sendResponse) => {
 // ─────────────────────────────────────────────
 // ARRANQUE
 // ─────────────────────────────────────────────
-setTimeout(() => { analisarPagina(); }, 1500);
+setTimeout(() => {
+  analisarPagina();
+  if (_plataforma) iniciarObserverEmail();
+}, 1500);
