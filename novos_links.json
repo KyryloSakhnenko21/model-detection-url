@@ -70,5 +70,41 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-05-31T21:26:43.636873"
+  },
+  {
+    "url": "https://www.google.com/advanced_search?hl=pt-PT&fg=1",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-02T11:07:29.877122"
+  },
+  {
+    "url": "https://myactivity.google.com/privacyadvisor/search?utm_source=googlemenu&fg=1",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-02T11:07:32.181192"
+  },
+  {
+    "url": "https://www.instagram.com/slbenfica/?hl=pt",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-02T11:08:28.731600"
+  },
+  {
+    "url": "https://www.facebook.com/SLBenfica/?locale=pt_PT",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-02T11:08:32.445406"
+  },
+  {
+    "url": "https://www.record.pt/futebol/futebol-nacional/liga-betclic/benfica",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-02T11:09:02.174669"
+  },
+  {
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3Dbenfica%26sca_esv%3D13664839709b14a6%26sxsrf%3DANbL-n7u0zZSTlwrOBbezN0YCsN2DouS0g%253A1780394864231%26source%3Dhp%26ei%3DcKseaq3HC9ani-gPyrTjUQ%26iflsig%3DAFdpzrgAAAAAah65gGdZ-eWWS5zgXhOXNhkwGOEjFYJD%26gs_ssp%3DeJzj4tTP1TcwKsqINzBg9GJPSs1Ly0xOBAA6mQX0%26oq%3Dbenfic%26gs_lp%3DEgdnd3Mtd2l6IgZiZW5maWMqAggAMgsQLhiDARixAxiABDIIEAAYgAQYsQMyBRAuGIAEMggQABiABBixAzIFEAAYgAQyBRAAGIAEMgUQABiABDIFEC4YgAQyBRAAGIAEMgUQLhiABEj2JFDmB1iAG3ABeACQAQCYAawBoAHLBqoBAzAuNrgBA8gBAPgBAZgCB6ACmweoAgrCAgcQIxjqAhgnwgIWEC4Y7QUY-gUYggYYgwYY3QUY6gIYJ8ICBxAuGOoCGCfCAgQQIxgnwgIKECMYgAQYigUYJ8ICEhAjGPAFGMkCGIAEGIoFGBMYJ8ICDhAAGIAEGIoFGLEDGIMBwgILEAAYgAQYsQMYgwHCAgQQABgDwgILEC4YgAQYsQMYgwHCAgwQIxiABBiKBRgTGCeYAxnxBVvfQQymFtuxkgcDMS42oAfkPrIHAzAuNrgHgQfCBwcyLTUuMS4xyAdAgAgB%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-02T11:09:02.299717"
   }
 ]
