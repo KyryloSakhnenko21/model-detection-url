@@ -322,5 +322,17 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-02T23:03:19.657849"
+  },
+  {
+    "url": "https://www.google.com/webhp?hl=pt-PT&sa=X&ved=0ahUKEwjQg_rsx-mUAxXdgv0HHTxmBtsQPAgI",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-02T23:04:12.905504"
+  },
+  {
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3Dsporting%26sca_esv%3D92507a02d39291ce%26sxsrf%3DANbL-n6f1PohBz3qLSsT0OX_pH3L9E7C3w%253A1780437846233%26source%3Dhp%26ei%3DVlMfarCBDJGL9u8P9byA8Ac%26iflsig%3DAFdpzrgAAAAAah9hZmYZm99jCCqp-KUlB2dtz4Ap8kxe%26gs_ssp%3DeJzj4tTP1TcwTjIwSTdg9OIoLsgvKsnMSwcAPqYGaA%26oq%3D%26gs_lp%3DEgdnd3Mtd2l6IgAqAggFMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQLhjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnSLYVUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgmoAgqYAwnxBW0wRPyNIaQMkgcBMaAHALIHALgHAMIHAzMtMcgHCIAIAQ%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-02T23:04:34.324539"
   }
 ]
