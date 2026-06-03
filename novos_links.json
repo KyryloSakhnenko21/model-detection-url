@@ -382,5 +382,89 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-02T23:19:48.623562"
+  },
+  {
+    "url": "google.com",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:41:30.420683"
+  },
+  {
+    "url": "https://google.com",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:41:48.050103"
+  },
+  {
+    "url": "https://www.linkedin.com/edu/school?id=16063",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:27.285188"
+  },
+  {
+    "url": "https://www.cookieyes.com/product/cookie-consent/?ref=cypbcyb&utm_source=cookie-banner&utm_medium=powered-by-cookieyes",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:43.698416"
+  },
+  {
+    "url": "https://www.ojogo.pt/?referrer=HeaderNI&utm_source=ojogo&utm_medium=headerni",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:49.939264"
+  },
+  {
+    "url": "https://www.jn.pt/volta-ao-mundo?referrer=HeaderNI&utm_source=jn&utm_medium=headerni",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:52.896612"
+  },
+  {
+    "url": "https://www.noticiasmagazine.pt/?referrer=HeaderNI&utm_source=ojogo&utm_medium=headerni",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:54.842943"
+  },
+  {
+    "url": "https://www.n-tv.pt/?referrer=HeaderNI&utm_source=ojogo&utm_medium=headerni",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:55.473582"
+  },
+  {
+    "url": "https://loja.ojogo.pt/assinaturas/?utm_source=jn&utm_medium=header",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:47:55.715107"
+  },
+  {
+    "url": "https://www.fcporto.pt/pt/noticias/20260602-pt-vamos-lutar-ate-ao-fim",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:48:08.750307"
+  },
+  {
+    "url": "https://3kmh.adj.st/editorial?adj_t=1s4z2lal_1sr5rrfj&adj_campaign=Banner+in+home",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:48:15.107296"
+  },
+  {
+    "url": "https://www.facebook.com/FCPorto/?locale=pt_PT",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:48:39.361335"
+  },
+  {
+    "url": "https://www.instagram.com/fcporto/?hl=pt",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-03T11:48:46.155121"
+  },
+  {
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3DPorto%2B%26sca_esv%3D417d7c30b6c96843%26sxsrf%3DANbL-n5DJj0oTjkf3s_H2i23-It1yI7gnw%253A1780483647375%26source%3Dhp%26ei%3DPwYgaunxE5mtkdUPsLq-yA4%26iflsig%3DAFdpzrgAAAAAaiAUT91k_XEw3gUz2nKBXXdPxCAqs5VE%26ved%3D0ahUKEwipjc-68uqUAxWZVqQEHTCdD-kQ4dUDCCM%26uact%3D5%26oq%3DPorto%2B%26gs_lp%3DEgdnd3Mtd2l6IgZQb3J0byAyBRAAGIAEMgUQABiABDIFEAAYgAQyCBAAGIAEGLEDMgQQABgDMgUQLhiABDIFEAAYgAQyCxAuGIAEGLEDGIMBMgUQABiABDIFEAAYgARItwpQAFiHBXAAeACQAQCYAZsBoAHFBaoBAzIuNLgBA8gBAPgBAZgCBqACiAbCAgwQIxiABBiKBRgTGCfCAgQQIxgnwgIKECMYgAQYigUYJ8ICDhAAGIAEGIoFGLEDGIMBwgILEAAYgAQYsQMYgwHCAgQQLhgDmAMAkgcDMS41oAevMbIHAzEuNbgHiAbCBwUyLTMuM8gHNIAIAQ%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-03T11:49:35.826588"
   }
 ]
