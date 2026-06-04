@@ -1,0 +1,19 @@
+# Datasets (ficheiros grandes)
+*.csv
+*.xlsx
+
+# Pasta temporária do Flask
+uploads_tmp/
+
+# Dados de runtime locais
+historico_pcap.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Sistema
+.DS_Store
+Thumbs.db
