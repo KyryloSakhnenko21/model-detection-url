@@ -1,7 +1,7 @@
 """
 treino_semanal.py
 ─────────────────
-Corre toda sábado às 22:00 via GitHub Actions.
+Corre todos os domingos à meia-noite via GitHub Actions.
 Lê os novos links do novos_links.json, extrai features,
 re-treina o modelo Random Forest, guarda o novo modelo
 e limpa o ficheiro de feedback para o próximo ciclo.
@@ -16,16 +16,15 @@ import pandas as pd
 from datetime import datetime
 from urllib.parse import urlparse
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, accuracy_score
 
 # ─────────────────────────────────────────────
 # CONFIGURAÇÃO
 # ─────────────────────────────────────────────
-FICHEIRO_FEEDBACK  = 'novos_links.json'
-MODELO_ATUAL       = 'modelo_rf_final.pkl'
-MODELO_NOVO        = 'modelo_rf_final.pkl'  # Substitui o atual
-MIN_NOVOS_LINKS    = 5   # Mínimo de links novos para re-treinar
+FICHEIRO_FEEDBACK = 'novos_links.json'
+MODELO_ATUAL      = 'modelo_rf_final.pkl'
+MODELO_NOVO       = 'modelo_rf_final.pkl'
+MIN_NOVOS_LINKS   = 5
 
 ENCURTADORES = {
     'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly',
@@ -170,38 +169,62 @@ def main():
             print(f"   ⚠️  Erro em {entrada['url']}: {e}")
 
     df_novos = pd.DataFrame(registos)
+    distribuicao = df_novos['label'].value_counts().to_dict()
     print(f"   ✓ {len(df_novos)} registos extraídos")
-    print(f"   Distribuição: {df_novos['label'].value_counts().to_dict()}")
+    print(f"   Distribuição: {distribuicao}")
+
+    # Verificar se há pelo menos as duas classes
+    # Se só há uma classe nos novos dados, o warm_start não consegue avaliar
+    # com métricas binárias — mas o re-treino é feito na mesma
+    classes_presentes = len(distribuicao)
+    if classes_presentes < 2:
+        print(f"   ⚠️  Apenas {classes_presentes} classe(s) nos novos dados.")
+        print(f"      O re-treino será feito mas a avaliação será ignorada.")
 
     # 3. Carregar modelo atual
     print("\n📦 A carregar modelo atual...")
     modelo_atual = joblib.load(MODELO_ATUAL)
+    n_arvores_antes = modelo_atual.n_estimators
+    print(f"   ✓ Modelo carregado — {n_arvores_antes} árvores")
 
     # 4. Preparar dados
     X_novos = df_novos[FEATURE_ORDER]
     y_novos = df_novos['label']
 
     # 5. Re-treinar com warm_start
+    # IMPORTANTE: o warm_start adiciona 50 árvores ao modelo existente.
+    # O fit() é feito UMA única vez — não repetir o fit() para avaliação
+    # pois isso corrompe o estado interno do modelo quando há só uma classe.
     print("\n🌲 A re-treinar o modelo com novos dados...")
-    modelo_atual.set_params(warm_start=True, n_estimators=modelo_atual.n_estimators + 50)
+    modelo_atual.set_params(
+        warm_start=True,
+        n_estimators=n_arvores_antes + 50
+    )
     modelo_atual.fit(X_novos, y_novos)
-    print(f"   ✓ Modelo re-treinado com {modelo_atual.n_estimators} árvores no total")
+    print(f"   ✓ Modelo re-treinado — {modelo_atual.n_estimators} árvores no total (+50)")
 
-    # 6. Avaliar (apenas nos novos dados, se suficientes)
-    if len(df_novos) >= 10:
-        X_tr, X_te, y_tr, y_te = train_test_split(X_novos, y_novos, test_size=0.2, random_state=42)
-        modelo_atual.fit(X_tr, y_tr)
-        y_pred = modelo_atual.predict(X_te)
-        f1  = f1_score(y_te, y_pred, zero_division=0)
-        acc = accuracy_score(y_te, y_pred)
+    # 6. Avaliação — só possível se houver as duas classes nos novos dados
+    if classes_presentes >= 2:
         print(f"\n📊 Avaliação nos novos dados:")
-        print(f"   Accuracy : {acc*100:.2f}%")
-        print(f"   F1-Score : {f1*100:.2f}%")
+        try:
+            y_pred = modelo_atual.predict(X_novos)
+            f1  = f1_score(y_novos, y_pred, zero_division=0)
+            acc = accuracy_score(y_novos, y_pred)
+            print(f"   Accuracy : {acc*100:.2f}%")
+            print(f"   F1-Score : {f1*100:.2f}%")
+            print(f"   (avaliação nos dados de treino — apenas indicativa)")
+        except Exception as e:
+            print(f"   ⚠️  Não foi possível avaliar: {e}")
+    else:
+        print(f"\n📊 Avaliação ignorada — apenas uma classe nos novos dados.")
+        print(f"   O modelo foi atualizado com os novos dados de qualquer forma.")
 
     # 7. Guardar novo modelo
     joblib.dump(modelo_atual, MODELO_NOVO)
     print(f"\n✅ Novo modelo guardado: {MODELO_NOVO}")
-    print(f"   Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"   Árvores antes : {n_arvores_antes}")
+    print(f"   Árvores depois: {modelo_atual.n_estimators}")
+    print(f"   Data          : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # 8. Limpar novos_links.json após treino bem sucedido
     with open(FICHEIRO_FEEDBACK, 'w', encoding='utf-8') as f:
