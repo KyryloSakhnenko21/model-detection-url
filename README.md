@@ -182,7 +182,7 @@ All features are extracted from the URL string only — no DNS, no WHOIS, no ext
 
 ## 📄 Academic Context
 
-This project was developed as **Project II** for the Bachelor's degree in Computer Engineering at ESTCB · IPCB (Instituto Politécnico de Castelo Branco), in the course unit *Artificial Intelligence applied to Cybersecurity*.
+This project was developed as **Project** for the Bachelor's degree in Computer Engineering at ESTCB · IPCB (Instituto Politécnico de Castelo Branco).
 
 ---
 
