@@ -182,7 +182,7 @@ Todas as features são extraídas apenas da string do URL — sem DNS, sem WHOIS
 
 ## 📄 Contexto Académico
 
-Este projeto foi desenvolvido como **Projeto II** da Licenciatura em Engenharia Informática na ESTCB · IPCB (Instituto Politécnico de Castelo Branco), na unidade curricular *Inteligência Artificial aplicada à Cibersegurança*.
+Este projeto foi desenvolvido como **Projeto II** da Licenciatura em Engenharia Informática na ESTCB · IPCB (Instituto Politécnico de Castelo Branco).
 
 ---
 
