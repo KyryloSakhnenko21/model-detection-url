@@ -1,0 +1,53 @@
+name: Treino Semanal do Modelo
+
+on:
+  schedule:
+    # Corre todos os domingos à meia-noite UTC (01:00 hora de Portugal)
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Permite execução manual pelo GitHub Actions
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Fazer checkout do repositório completo (incluindo ficheiros Git LFS)
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Configurar Python 3.11
+      # (usa 3.11 no Actions — mais estável que 3.13 em ambiente Linux CI)
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. Instalar dependências necessárias para o re-treino
+      - name: Instalar dependências
+        run: |
+          pip install --upgrade pip
+          pip install scikit-learn joblib pandas numpy
+
+      # 4. Correr o script de re-treino
+      - name: Executar treino semanal
+        run: |
+          cd app
+          python treino_semanal.py
+
+      # 5. Configurar identidade Git para o commit automático
+      - name: Configurar Git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 6. Fazer commit e push do modelo atualizado e da lista de feedback limpa
+      - name: Commit e push do modelo atualizado
+        run: |
+          git add app/modelo_rf_final.pkl app/novos_links.json
+          # Só faz commit se houver alterações
+          git diff --staged --quiet || git commit -m "re-treino automático semanal: modelo atualizado e feedback limpo"
+          git push
