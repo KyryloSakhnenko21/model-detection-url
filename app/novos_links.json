@@ -34,5 +34,41 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-15T16:58:57.921313"
+  },
+  {
+    "url": "https://www.google.com/search?sca_esv=07a46b020f30d9f9&sxsrf=ANbL-n51dXvZHav0EJNqYji0ulOGD_RA9Q:1781539115270&q=Sporting+login&sa=X&ved=2ahUKEwihyPmwzomVAxUgUqQEHbC5NUYQ1QJ6BQiGARAB",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T16:59:00.400306"
+  },
+  {
+    "url": "http://test.com",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:04:46.552173"
+  },
+  {
+    "url": "https://www.facebook.com/SportingCP/?locale=pt_PT",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:04:54.760974"
+  },
+  {
+    "url": "https://x.com/Sporting_CPAdep/status/2066275865147695484?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:04:56.082436"
+  },
+  {
+    "url": "https://x.com/racadeleao_/status/2066261191609946219?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:04:57.373397"
+  },
+  {
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3Dsporting%26sca_esv%3D07a46b020f30d9f9%26sxsrf%3DANbL-n7B3fbqQVg40ph7_vemWaQlvabYfA%253A1781538969207%26source%3Dhp%26ei%3DmSAwatT1Cdr_7M8P4rXYoQ0%26iflsig%3DAFdpzrgAAAAAajAuqQk61NM4hK45rrofQ296DsaI6FpR%26gs_ssp%3DeJzj4tTP1TcwTjIwSTdg9OIoLsgvKsnMSwcAPqYGaA%26oq%3D%26gs_lp%3DEgdnd3Mtd2l6IgAqAggAMgcQLhjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnSJ4HUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAhSoAgqYAxTxBXda-LMIncdKkgcBMaAHALIHALgHAMIHAzMtMcgHEIAIAQ%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-15T17:04:57.685739"
   }
 ]
