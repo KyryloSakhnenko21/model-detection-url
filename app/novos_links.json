@@ -76,5 +76,17 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-15T17:05:00.649542"
+  },
+  {
+    "url": "https://www.google.com/search?sca_esv=07a46b020f30d9f9&sxsrf=ANbL-n6Tweyrgl39aSECOal6fEEvLl5YnQ:1781539480837&q=Sporting+login&sa=X&ved=2ahUKEwjd_qHfz4mVAxXxgP0HHbImFuYQ1QJ6BQiKARAB",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:05:03.800743"
+  },
+  {
+    "url": "https://www.slbenfica.pt/pt-pt/instituicao/clube/historia/fundacao",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-15T17:05:07.599328"
   }
 ]
