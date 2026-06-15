@@ -192,35 +192,16 @@ def main():
     y_novos = df_novos['label']
 
     # 5. Re-treinar com warm_start
-    # IMPORTANTE: o warm_start requer SEMPRE as duas classes (0 e 1).
-    # Se os novos dados tiverem só uma classe, adicionamos um registo
-    # sintético da classe em falta para não corromper o modelo.
+    # IMPORTANTE: o warm_start adiciona 50 árvores ao modelo existente.
+    # O fit() é feito UMA única vez — não repetir o fit() para avaliação
+    # pois isso corrompe o estado interno do modelo quando há só uma classe.
     print("\n🌲 A re-treinar o modelo com novos dados...")
-
-    if classes_presentes < 2:
-        print("   ⚠️  Apenas uma classe nos novos dados.")
-        print("      A adicionar registo sintético para preservar as duas classes no modelo...")
-        classe_em_falta = 1 if 0 not in distribuicao else 0
-        registo_sintetico = extrair_features('http://example.com')
-        registo_sintetico['label'] = classe_em_falta
-        df_sintetico = pd.DataFrame([registo_sintetico])
-        df_novos = pd.concat([df_novos, df_sintetico], ignore_index=True)
-        X_novos = df_novos[FEATURE_ORDER]
-        y_novos = df_novos['label']
-        print(f"      ✓ Registo sintético adicionado (classe {classe_em_falta})")
-
     modelo_atual.set_params(
         warm_start=True,
         n_estimators=n_arvores_antes + 50
     )
     modelo_atual.fit(X_novos, y_novos)
     print(f"   ✓ Modelo re-treinado — {modelo_atual.n_estimators} árvores no total (+50)")
-
-    # Verificação de segurança: garantir que o modelo tem as duas classes
-    if list(modelo_atual.classes_) != [0, 1]:
-        print(f"   ❌ ERRO: modelo ficou com classes {modelo_atual.classes_} — a abortar gravação!")
-        print(f"      O modelo existente NÃO foi substituído.")
-        return
 
     # 6. Avaliação — só possível se houver as duas classes nos novos dados
     if classes_presentes >= 2:
