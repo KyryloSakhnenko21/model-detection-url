@@ -78,7 +78,9 @@ def alertas_stream_preflight():
 # ─────────────────────────────────────────────
 # CARREGAR MODELO
 # ─────────────────────────────────────────────
-modelo = joblib.load('modelo_rf_final.pkl')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+modelo = joblib.load(os.path.join(BASE_DIR, 'modelo_rf_final.pkl'))
+assert list(modelo.classes_) == [0, 1], f'ERRO: modelo com classes {modelo.classes_}. Substitua o modelo_rf_final.pkl pelo modelo correto (27 features, 2 classes).'
 
 ENCURTADORES = {
     'bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly',
