@@ -1,7 +1,7 @@
 # 🛡️ URL Shield — Deteção de URLs Maliciosos com Machine Learning
 
 > **Projeto Académico** · Inteligência Artificial aplicada à Cibersegurança · ESTCB · IPCB · 2025/2026  
-> **Autores:** Kyrylo Sakhnenko & Rodrigo Figueiredo · **Orientador:** Prof. Alexandre Fonte
+> **Autores:** Kyrylo Sakhnenko & Rodrigo Figueiredo · **Orientador:** Professor Alexandre Fonte
 
 [![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python)](https://python.org)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-RandomForest-orange)](https://scikit-learn.org)
