@@ -18,7 +18,7 @@ app = Flask(__name__)
 # CONFIGURAÇÃO GIT
 # ─────────────────────────────────────────────
 GITHUB_USER       = 'KyryloSakhnenko21'
-GITHUB_REPO       = 'modelo-deteção-url'
+GITHUB_REPO       = 'model-detection-url'
 FICHEIRO_FEEDBACK = 'novos_links.json'
 FICHEIRO_HISTORICO = 'historico_pcap.json'
 

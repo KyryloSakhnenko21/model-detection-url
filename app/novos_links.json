@@ -112,5 +112,23 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-15T17:06:52.458365"
+  },
+  {
+    "url": "https://x.com/DTransferencias/status/2065348084867957233?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Etweet",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:16:11.123041"
+  },
+  {
+    "url": "https://www.google.com/search?sca_esv=07a46b020f30d9f9&sxsrf=ANbL-n5nx1R72j3htSxOuf6JHZhFvoBKvw:1781540153804&q=Sporting+login&sa=X&ved=2ahUKEwji2ZSg0omVAxU7NvsDHf_IDDUQ1QJ6BQiQARAB",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:16:15.227396"
+  },
+  {
+    "url": "https://www.google.com/search?sca_esv=07a46b020f30d9f9&sxsrf=ANbL-n4suXgVz27chXLt26qnzypmmTVeZw:1781540279618&q=Sporting+login&sa=X&ved=2ahUKEwiO45Pc0omVAxWg8bsIHYr4OrsQ1QJ6BAh2EAE",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:18:20.726502"
   }
 ]
