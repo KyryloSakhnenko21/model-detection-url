@@ -70,5 +70,29 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-15T17:33:15.409190"
+  },
+  {
+    "url": "serviciosbys.com/paypal.cgi.bin.get-into.herf.secure/verify/login.php?cmd=login",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:33:57.396574"
+  },
+  {
+    "url": "google.com",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:34:00.905705"
+  },
+  {
+    "url": "nobell.it/70ffb52d079109dca5664cce6f317373782/paypal.verify.secure/index.php",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T17:34:05.905114"
+  },
+  {
+    "url": "http://localhost:5000/monitor",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-15T17:34:17.952669"
   }
 ]
