@@ -1,146 +1,14 @@
 [
   {
-    "url": "serviciosbys.com/paypal.cgi.bin.get-into.herf.secure/verify/login.php?cmd=login",
-    "label": "MALICIOSO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:40:48.904259"
-  },
-  {
-    "url": "nobell.it/70ffb52d079109dca5664cce6f317373782/paypal.verify.secure/index.php",
-    "label": "MALICIOSO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:40:51.673676"
-  },
-  {
-    "url": "https://about.google/?fg=1&utm_source=google-&utm_medium=referral&utm_campaign=hp-header",
-    "label": "BENIGNO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:41:01.455646"
-  },
-  {
-    "url": "https://store.google.com/?utm_source=hp_header&utm_medium=google_ooo&utm_campaign=GS100042&hl=pt-PT-",
-    "label": "BENIGNO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:41:02.385889"
-  },
-  {
-    "url": "https://myactivity.google.com/privacyadvisor/search?utm_source=googlemenu&fg=1",
-    "label": "BENIGNO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:41:06.830311"
-  },
-  {
     "url": "http://test.com",
     "label": "BENIGNO",
     "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:41:19.157696"
+    "timestamp": "2026-06-15T16:58:39.686448"
   },
   {
-    "url": "https://support.google.com/legal/troubleshooter/1114905#ts=9723198%2C7170398",
-    "label": "MALICIOSO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:41:29.287647"
-  },
-  {
-    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3DIKEA%26sca_esv%3De1870cce4b49432d%26sxsrf%3DANbL-n7ZuwSAAiU2fNMTQsEPGp5dSRFYcg%253A1781538059800%26source%3Dhp%26ei%3DCx0waqqvLbaC9u8PueOVqQg%26iflsig%3DAFdpzrgAAAAAajArG0eGMmzBuDgefp0JjpM6OFHeXqw3%26ved%3D0ahUKEwjq4NG5yomVAxU2gf0HHblxJYUQ4dUDCDc%26uact%3D5%26oq%3DIKEA%26gs_lp%3DEgdnd3Mtd2l6IgRJS0VBMgUQABiABDIEEAAYAzIIEAAYgAQYsQMyDhAuGIAEGLEDGMcBGK8BMgsQLhiABBjHARivATIFEAAYgAQyCBAAGIAEGLEDMggQABiABBixAzIFEAAYgAQyBRAAGIAESIwXUN8CWNoVcAJ4AJABAJgBggGgAeMDqgEDMC40uAEDyAEA-AEBmAIFoAKHA6gCCsICBxAjGOoCGCfCAgcQLhjqAhgnwgIMECMYgAQYigUYExgnwgIKECMYgAQYigUYJ8ICChAuGIAEGIoFGCfCAgoQABiABBiKBRhDwgILEAAYgAQYsQMYgwHCAg0QABiABBiKBRhDGLEDwgIREC4YgAQYsQMYgwEYxwEY0QPCAgsQLhiABBixAxiDAZgDEfEF5ggdl_HkvP2SBwMyLjOgB6kvsgcDMC4zuAfzAsIHBzAuMi4yLjHIBx6ACAE%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
+    "url": "https://accounts.google.com/SignOutOptions?hl=pt-PT&continue=https://www.google.com/search%3Fq%3Dsporting%26sca_esv%3D07a46b020f30d9f9%26sxsrf%3DANbL-n7B3fbqQVg40ph7_vemWaQlvabYfA%253A1781538969207%26source%3Dhp%26ei%3DmSAwatT1Cdr_7M8P4rXYoQ0%26iflsig%3DAFdpzrgAAAAAajAuqQk61NM4hK45rrofQ296DsaI6FpR%26gs_ssp%3DeJzj4tTP1TcwTjIwSTdg9OIoLsgvKsnMSwcAPqYGaA%26oq%3D%26gs_lp%3DEgdnd3Mtd2l6IgAqAggAMgcQLhjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnMgcQIxjqAhgnSJ4HUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAhSoAgqYAxTxBXda-LMIncdKkgcBMaAHALIHALgHAMIHAzMtMcgHEIAIAQ%26sclient%3Dgws-wiz&ec=futura_srp_og_si_72236_p",
     "label": "BENIGNO",
     "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:41:50.259865"
-  },
-  {
-    "url": "https://support.google.com/websearch/answer/181196?hl=pt-PT",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:41:51.185367"
-  },
-  {
-    "url": "https://login.yahoo.com/;_ylt=AwrFRk5rHjBqIAIAaBtXNyoA?.intl=us&.lang=en-US&pspid=2766679&.src=search&.done=https%3A%2F%2Fsearch.yahoo.com%2Fsearch%3Ffr%3Dmcafee_uninternational%26type%3DE210PT91105G0%26p%3Dmoodle%2Bipcb&activity=header-signin",
-    "label": "MALICIOSO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:46:59.132007"
-  },
-  {
-    "url": "https://www.linkedin.com/edu/school?id=16063",
-    "label": "BENIGNO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:47:04.634699"
-  },
-  {
-    "url": "https://guce.yahoo.com/privacy-policy?locale=en-US",
-    "label": "BENIGNO",
-    "fonte": "auto_alta_confianca",
-    "timestamp": "2026-06-15T16:47:11.876608"
-  },
-  {
-    "url": "http://localhost:5000/monitor",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:04.862242"
-  },
-  {
-    "url": "https://moodle2526.ipcb.pt/course/index.php",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:22.579470"
-  },
-  {
-    "url": "https://news.search.yahoo.com/search;_ylt=AwrFRk5rHjBqIAIAaxtXNyoA;_ylu=Y29sbwNiZjEEcG9zAzEEdnRpZAMEc2VjA3BpdnM-?p=moodle+ipcb&fr2=piv-web&type=E210PT91105G0&fr=mcafee_uninternational",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:23.450785"
-  },
-  {
-    "url": "https://video.search.yahoo.com/search/video;_ylt=AwrFRk5rHjBqIAIAahtXNyoA;_ylu=Y29sbwNiZjEEcG9zAzEEdnRpZAMEc2VjA3BpdnM-?p=moodle+ipcb&fr2=piv-web&type=E210PT91105G0&fr=mcafee_uninternational",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:24.286721"
-  },
-  {
-    "url": "https://us.shopping.search.yahoo.com/search;_ylt=AwrFRk5rHjBqIAIAbRtXNyoA;_ylu=Y29sbwNiZjEEcG9zAzEEdnRpZAMEc2VjA3BpdnM-?type=E210PT91105G0&p=moodle+ipcb&fr2=piv-web&fr=mcafee_uninternational",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:25.771516"
-  },
-  {
-    "url": "https://advertising.yahoo.com/article/search-advertising.html",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:26.584085"
-  },
-  {
-    "url": "https://www.yahoo.com/news",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:28.108219"
-  },
-  {
-    "url": "https://images.search.yahoo.com/search/images;_ylt=AwrFRk5rHjBqIAIAaRtXNyoA;_ylu=Y29sbwNiZjEEcG9zAzEEdnRpZAMEc2VjA3BpdnM-?p=moodle+ipcb&fr2=piv-web&type=E210PT91105G0&fr=mcafee_uninternational",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:29.151164"
-  },
-  {
-    "url": "https://support.google.com/websearch/?p=ws_results_help&hl=pt-PT&fg=1",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:45.945264"
-  },
-  {
-    "url": "https://support.google.com/local-listings?p=how_google_sources",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:47.253863"
-  },
-  {
-    "url": "https://support.google.com/websearch/answer/3338405",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:48.053621"
-  },
-  {
-    "url": "https://www.google.com/search?q=IKEA&sca_esv=e1870cce4b49432d&sxsrf=ANbL-n7ZuwSAAiU2fNMTQsEPGp5dSRFYcg:1781538059800&source=hp&ei=Cx0waqqvLbaC9u8PueOVqQg&iflsig=AFdpzrgAAAAAajArG0eGMmzBuDgefp0JjpM6OFHeXqw3&ved=0ahUKEwjq4NG5yomVAxU2gf0HHblxJYUQ4dUDCDc&uact=5&oq=IKEA&gs_lp=Egdnd3Mtd2l6IgRJS0VBMgUQABiABDIEEAAYAzIIEAAYgAQYsQMyDhAuGIAEGLEDGMcBGK8BMgsQLhiABBjHARivATIFEAAYgAQyCBAAGIAEGLEDMggQABiABBixAzIFEAAYgAQyBRAAGIAESIwXUN8CWNoVcAJ4AJABAJgBggGgAeMDqgEDMC40uAEDyAEA-AEBmAIFoAKHA6gCCsICBxAjGOoCGCfCAgcQLhjqAhgnwgIMECMYgAQYigUYExgnwgIKECMYgAQYigUYJ8ICChAuGIAEGIoFGCfCAgoQABiABBiKBRhDwgILEAAYgAQYsQMYgwHCAg0QABiABBiKBRhDGLEDwgIREC4YgAQYsQMYgwEYxwEY0QPCAgsQLhiABBixAxiDAZgDEfEF5ggdl_HkvP2SBwMyLjOgB6kvsgcDMC4zuAfzAsIHBzAuMi4yLjHIBx6ACAE&sclient=gws-wiz&peek_pws=0",
-    "label": "BENIGNO",
-    "fonte": "utilizador",
-    "timestamp": "2026-06-15T16:51:48.962898"
+    "timestamp": "2026-06-15T16:58:43.147252"
   }
 ]
