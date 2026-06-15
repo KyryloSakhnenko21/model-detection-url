@@ -332,10 +332,29 @@ def arrancar_monitor():
 # FEEDBACK E GIT
 # ─────────────────────────────────────────────
 def carregar_feedback():
-    if os.path.exists(FICHEIRO_FEEDBACK):
+    if not os.path.exists(FICHEIRO_FEEDBACK):
+        return []
+    try:
         with open(FICHEIRO_FEEDBACK, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return []
+            conteudo = f.read().strip()
+        if not conteudo:
+            return []
+        dados = json.loads(conteudo)
+        # Garantir que é sempre uma lista
+        if isinstance(dados, list):
+            return dados
+        if isinstance(dados, dict):
+            return [dados]
+        return []
+    except json.JSONDecodeError:
+        # Ficheiro corrompido — fazer backup e recomeçar limpo
+        backup = FICHEIRO_FEEDBACK + '.bak'
+        import shutil
+        shutil.copy2(FICHEIRO_FEEDBACK, backup)
+        print(f'[Feedback] ⚠️  novos_links.json corrompido — backup guardado em {backup}. A recomeçar com lista vazia.')
+        with open(FICHEIRO_FEEDBACK, 'w', encoding='utf-8') as f:
+            json.dump([], f, indent=2)
+        return []
 
 def guardar_feedback_local(url, label, fonte='utilizador'):
     dados = carregar_feedback()
