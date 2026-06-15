@@ -52,5 +52,29 @@
     "label": "BENIGNO",
     "fonte": "utilizador",
     "timestamp": "2026-06-15T16:41:51.185367"
+  },
+  {
+    "url": "https://login.yahoo.com/;_ylt=AwrFRk5rHjBqIAIAaBtXNyoA?.intl=us&.lang=en-US&pspid=2766679&.src=search&.done=https%3A%2F%2Fsearch.yahoo.com%2Fsearch%3Ffr%3Dmcafee_uninternational%26type%3DE210PT91105G0%26p%3Dmoodle%2Bipcb&activity=header-signin",
+    "label": "MALICIOSO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T16:46:59.132007"
+  },
+  {
+    "url": "https://www.linkedin.com/edu/school?id=16063",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T16:47:04.634699"
+  },
+  {
+    "url": "https://guce.yahoo.com/privacy-policy?locale=en-US",
+    "label": "BENIGNO",
+    "fonte": "auto_alta_confianca",
+    "timestamp": "2026-06-15T16:47:11.876608"
+  },
+  {
+    "url": "http://localhost:5000/monitor",
+    "label": "BENIGNO",
+    "fonte": "utilizador",
+    "timestamp": "2026-06-15T16:51:04.862242"
   }
 ]
